@@ -13,7 +13,7 @@ def write(text:string)->number:
     :return: The number of lines written
     """
 
-    return 0
+    pass
 def print(*args):
     """
     Prints the specified values to the screen separated by spaces, wrapping if necessary.
