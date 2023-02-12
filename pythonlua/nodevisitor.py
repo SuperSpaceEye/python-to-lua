@@ -1,5 +1,7 @@
 """Node visitor"""
 import ast
+import copy
+import builtins
 
 from .binopdesc import BinaryOperationDesc
 from .boolopdesc import BooleanOperationDesc
@@ -10,17 +12,35 @@ from .unaryopdesc import UnaryOperationDesc
 from .context import Context
 from .loopcounter import LoopCounter
 from .tokenendmode import TokenEndMode
+from .prenodevisitor import PreNodeVisitor
 
 
 class NodeVisitor(ast.NodeVisitor):
     LUACODE = "[[luacode]]"
 
     """Node visitor"""
-    def __init__(self, context=None, config=None):
+    def __init__(self,
+                 context=None,
+                 config=None,
+                 continue_nodes=None,
+                 precompiled_parts=None,
+                 names=None):
         self.context = context if context is not None else Context()
         self.config = config
         self.last_end_mode = TokenEndMode.LINE_FEED
         self.output = []
+
+        self.core_prefix = config.core_prefix
+        self.core_pathname = config.core_pathname
+        self.no_jumps = config.no_jumps
+
+        if continue_nodes is not None:
+            self.continue_nodes = [item[0] for item in continue_nodes]
+        else:
+            self.continue_nodes = []
+        self.precompiled_parts = precompiled_parts if precompiled_parts is not None else []
+        self.names = names if names is not None else []
+        self.fn_calls = [item[1] for item in continue_nodes] if continue_nodes is not None else []
 
     def visit_Assign(self, node):
         """Visit assign"""
@@ -62,9 +82,16 @@ class NodeVisitor(ast.NodeVisitor):
 
     def visit_Attribute(self, node):
         """Visit attribute"""
+
+        obj = self.visit_all(node.value, True)
+        if obj == self.core_prefix:
+            line = "{attr}"
+            self.emit(line.format(**{"attr":node.attr}))
+            return
+
         line = "{object}.{attr}"
         values = {
-            "object": self.visit_all(node.value, True),
+            "object": obj,
             "attr": node.attr,
         }
         self.emit(line.format(**values))
@@ -173,6 +200,12 @@ class NodeVisitor(ast.NodeVisitor):
     def visit_Continue(self, node):
         """Visit continue"""
         last_ctx = self.context.last()
+
+        if self.no_jumps:
+            # raise RuntimeError("Continue can't be used")
+            self.emit("return")
+            return
+
         line = "goto {}".format(last_ctx["loop_label_name"])
         self.emit(line)
 
@@ -277,8 +310,21 @@ class NodeVisitor(ast.NodeVisitor):
 
         self.emit(function_def)
 
+        # print(self.fn_calls)
+        for i, item in enumerate(self.fn_calls):
+            if item == node:
+                pass
+                self.output += self.precompiled_parts[0][1]
+                # for item in self.precompiled_parts[0]:
+                #     print(item, "===")
+                # print(self.precompiled_parts)
+
         self.context.push({"class_name": ""})
+
+        temp = copy.deepcopy(self.names)
         self.visit_all(node.body)
+        self.names = temp
+
         self.context.pop()
 
         body = self.output[-1]
@@ -326,10 +372,30 @@ class NodeVisitor(ast.NodeVisitor):
         self.context.push({
             "loop_label_name": continue_label,
         })
-        self.visit_all(node.body)
+
+        if self.no_jumps and node in self.continue_nodes:
+            idx = self.continue_nodes.index(node)
+
+            self.names = list(tuple(self.names))
+            self.names = list(tuple(v for v in set(self.names) if v not in vars(builtins) and v not in self.config.core_prefix))
+            fn_data = copy.deepcopy(self.precompiled_parts[idx][0][2]) + "("
+            for i, item in enumerate(self.precompiled_parts[idx][0][1]):
+                if item in self.names:
+                    fn_data += item
+                else:
+                    fn_data += "0"
+                if i != len(self.precompiled_parts[idx][0][1])-1:
+                    fn_data+=","
+            fn_data += ")"
+
+            self.emit([fn_data])
+        else:
+            self.visit_all(node.body)
+
         self.context.pop()
 
-        self.output[-1].append("::{}::".format(continue_label))
+        if not self.no_jumps:
+            self.output[-1].append("::{}::".format(continue_label))
 
         self.emit("end")
 
@@ -382,6 +448,9 @@ class NodeVisitor(ast.NodeVisitor):
         """Visit import"""
         line = 'local {asname} = require "{name}"'
         values = {"asname": "", "name": ""}
+
+        if node.names[0].name == self.core_pathname:
+            return
 
         if node.names[0].asname is None:
             values["name"] = node.names[0].name
@@ -457,6 +526,7 @@ class NodeVisitor(ast.NodeVisitor):
     def visit_Name(self, node):
         """Visit name"""
         self.emit(node.id)
+        self.names.append(node.id)
 
     def visit_NameConstant(self, node):
         """Visit name constant"""
@@ -564,14 +634,18 @@ class NodeVisitor(ast.NodeVisitor):
         """Unknown nodes handler"""
         raise RuntimeError("Unknown node: {}".format(node))
 
-    def visit_all(self, nodes, inline=False):
+    def visit_all(self, nodes, inline=False, nopop=False):
         """Visit all nodes in the given list"""
 
         if not inline:
             last_ctx = self.context.last()
             last_ctx["locals"].push()
 
-        visitor = NodeVisitor(context=self.context, config=self.config)
+        visitor = NodeVisitor(context=self.context,
+                              config=self.config,
+                              continue_nodes=[[it1, it2] for it1, it2 in zip(self.continue_nodes, self.fn_calls)],
+                              precompiled_parts=self.precompiled_parts,
+                              names=self.names)
 
         if isinstance(nodes, list):
             for node in nodes:
@@ -585,7 +659,7 @@ class NodeVisitor(ast.NodeVisitor):
 
         if not inline:
             last_ctx = self.context.last()
-            last_ctx["locals"].pop()
+            if not nopop: last_ctx["locals"].pop()
 
         if inline:
             return " ".join(visitor.output)
