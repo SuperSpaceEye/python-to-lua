@@ -7,6 +7,12 @@ string_meta.__add = function(v1, v2)
     if type(v1) == "string" and type(v2) == "string" then
         return v1 .. v2
     end
+    if type(v1) == "string" and type(v2) == "number" then
+        return v1 .. v2
+    end
+    if type(v1) == "number" and type(v2) == "string" then
+        return v1 .. v2
+    end
     return v1 + v2
 end
 

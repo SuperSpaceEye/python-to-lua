@@ -50,10 +50,11 @@ class Translator:
                                              config=self.config)
                 pre_visitor.visit(node)
 
-                names = list(tuple(v for v in set(pre_visitor.names) if v not in vars(builtins) and v not in self.config.core_prefix))
+                # names = list(tuple(v for v in set(pre_visitor.names) if v not in vars(builtins) and v not in self.config.core_prefix))
+                var_list = list(pre_visitor.var_names)
                 names_str = ""
-                for name in names:
-                    if name != names[len(names)-1]:
+                for name in pre_visitor.var_names:
+                    if name != var_list[len(var_list)-1]:
                         names_str += name + ", "
                     else:
                         names_str += name
@@ -64,7 +65,7 @@ class Translator:
                 visitor.emit(f"function {function_name}")
                 visitor.visit_all(node.body, nopop=True)
                 visitor.emit("end")
-                precompiled_parts.append([[function_name, names, f"continue_fn{len(precompiled_parts)}"], visitor.output, visitor.context.last(), node])
+                precompiled_parts.append([[function_name, var_list, f"continue_fn{len(precompiled_parts)}"], visitor.output])
 
         visitor = NodeVisitor(config=self.config,
                               continue_nodes=continue_nodes,

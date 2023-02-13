@@ -13,7 +13,9 @@ class PreNodeVisitor(ast.NodeVisitor):
                  continue_nodes=None,
                  names=None,
                  has_return=None,
-                 parent_nodes=None):
+                 parent_nodes=None,
+                 fn_calls=None,
+                 var_names=None):
         self.context = context if context is not None else Context()
         self.config = config
 
@@ -22,10 +24,17 @@ class PreNodeVisitor(ast.NodeVisitor):
         self.names = names if names is not None else []
         self.has_return = has_return if has_return is not None else [False]
         self.parent_nodes = parent_nodes if parent_nodes is not None else []
+        self.fn_calls = fn_calls if fn_calls is not None else []
+        self.var_names = var_names if var_names is not None else set()
 
     def visit_Assign(self, node):
-        self.visit_all(node.targets[0], inline=True)
-        self.visit_all(node.value, inline=True)
+        target = self.visit_all(node.targets[0], inline=True)
+        value = self.visit_all(node.value, inline=True)
+
+        for item in target:
+            self.var_names.add(item)
+
+        # print(target, value)
 
     def visit_AugAssign(self, node):
         self.visit_all(node.target, inline=True)
@@ -47,6 +56,13 @@ class PreNodeVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         name = self.visit_all(node.func, inline=True)
         arguments = [self.visit_all(arg, inline=True) for arg in node.args]
+
+
+        self.fn_calls = list(set(self.fn_calls + name))
+        for items in arguments:
+            if None in items: continue
+            for item in items:
+                self.var_names.add(item)
 
     def visit_ClassDef(self, node):
         bases = [self.visit_all(base, inline=True) for base in node.bases]
@@ -101,7 +117,7 @@ class PreNodeVisitor(ast.NodeVisitor):
         self.visit_all(node.iter, inline=True)
         self.visit_all(node.body)
         if self.has_continue[0]:
-            if self.has_return[0]: raise Exception("Continue and early return can't be together in one loop")
+            # if self.has_return[0]: raise Exception("Continue and early return can't be together in one loop")
             self.has_continue[0] = False
             if len(self.parent_nodes) != 0:
                 self.continue_nodes.append([node, self.parent_nodes.pop()])
@@ -153,7 +169,7 @@ class PreNodeVisitor(ast.NodeVisitor):
 
     def visit_Name(self, node):
         self.names.append(node.id)
-        pass
+        return node.id
 
     def visit_NameConstant(self, node):
         pass
@@ -204,25 +220,23 @@ class PreNodeVisitor(ast.NodeVisitor):
         raise RuntimeError("Unknown node: {}".format(node))
 
     def visit_all(self, nodes, inline=False):
-        """Visit all nodes in the given list"""
-
-        if not inline:
-            last_ctx = self.context.last()
-            last_ctx["locals"].push()
-
         visitor = PreNodeVisitor(context=self.context,
                                  config=self.config,
                                  has_continue=self.has_continue,
                                  continue_nodes=self.continue_nodes,
                                  names=self.names,
                                  has_return=self.has_return,
-                                 parent_nodes=self.parent_nodes)
+                                 parent_nodes=self.parent_nodes,
+                                 fn_calls=self.fn_calls,
+                                 var_names=self.var_names)
 
+        names = []
         if isinstance(nodes, list):
             for node in nodes:
-                visitor.visit(node)
+                names.append(visitor.visit(node))
         else:
-            visitor.visit(nodes)
+            names.append(visitor.visit(nodes))
+        return names
 
     def emit(self, value):
         pass
