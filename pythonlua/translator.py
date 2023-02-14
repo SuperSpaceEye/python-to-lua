@@ -7,6 +7,11 @@ from .config import Config
 from .nodevisitor import NodeVisitor
 from .prenodevisitor import PreNodeVisitor
 
+import sys
+sys.path.append("..")
+sys.path.append("../pythonluanew")
+from pythonluanew.nodevisitor import NodeVisitor as ND
+
 class Translator:
     """Python to lua main class translator"""
     def __init__(self, config=None, show_ast=False):
@@ -28,49 +33,51 @@ class Translator:
         if self.show_ast:
             print(ast.dump(py_ast_tree))
 
-        precompiled_parts = []
-        continue_nodes = None
-        # because CC:T lua has no goto jumps (as of right now), the continue can be emulated
-        # by refactoring body of a loop into a function with early return (early return itself can't be together with continue loop)
-        # to do that,
-        i = 0
-        if self.config.no_jumps:
-            pre_visitor = PreNodeVisitor(config=self.config)
-            pre_visitor.visit(py_ast_tree)
-            # 0 - node of loop, 1 - node of fn definition
-            continue_nodes = list(reversed(pre_visitor.continue_nodes))
+        # precompiled_parts = []
+        # continue_nodes = None
+        # # because CC:T lua has no goto jumps (as of right now), the continue can be emulated
+        # # by refactoring body of a loop into a function with early return (early return itself can't be together with continue loop)
+        # # to do that,
+        # i = 0
+        # if self.config.no_jumps:
+        #     pre_visitor = PreNodeVisitor(config=self.config)
+        #     pre_visitor.visit(py_ast_tree)
+        #     # 0 - node of loop, 1 - node of fn definition
+        #     continue_nodes = list(reversed(pre_visitor.continue_nodes))
+        #
+        #     for node in [item[0] for item in continue_nodes]:
+        #         visitor = NodeVisitor(config=self.config,
+        #                               continue_nodes=continue_nodes,
+        #                               precompiled_parts=precompiled_parts
+        #                               )
+        #
+        #         pre_visitor = PreNodeVisitor(context=None,
+        #                                      config=self.config)
+        #         pre_visitor.visit(node)
+        #
+        #         # names = list(tuple(v for v in set(pre_visitor.names) if v not in vars(builtins) and v not in self.config.core_prefix))
+        #         var_list = list(pre_visitor.var_names)
+        #         names_str = ""
+        #         for name in pre_visitor.var_names:
+        #             if name != var_list[len(var_list)-1]:
+        #                 names_str += name + ", "
+        #             else:
+        #                 names_str += name
+        #
+        #
+        #         function_name = f"continue_fn{len(precompiled_parts)}({names_str})"
+        #
+        #         visitor.emit(f"function {function_name}")
+        #         visitor.visit_all(node.body, nopop=True)
+        #         visitor.emit("end")
+        #         precompiled_parts.append([[function_name, var_list, f"continue_fn{len(precompiled_parts)}"], visitor.output])
+        #
+        # visitor = NodeVisitor(config=self.config,
+        #                       continue_nodes=continue_nodes,
+        #                       precompiled_parts=precompiled_parts)
+        # self.output = []
 
-            for node in [item[0] for item in continue_nodes]:
-                visitor = NodeVisitor(config=self.config,
-                                      continue_nodes=continue_nodes,
-                                      precompiled_parts=precompiled_parts
-                                      )
-
-                pre_visitor = PreNodeVisitor(context=None,
-                                             config=self.config)
-                pre_visitor.visit(node)
-
-                # names = list(tuple(v for v in set(pre_visitor.names) if v not in vars(builtins) and v not in self.config.core_prefix))
-                var_list = list(pre_visitor.var_names)
-                names_str = ""
-                for name in pre_visitor.var_names:
-                    if name != var_list[len(var_list)-1]:
-                        names_str += name + ", "
-                    else:
-                        names_str += name
-
-
-                function_name = f"continue_fn{len(precompiled_parts)}({names_str})"
-
-                visitor.emit(f"function {function_name}")
-                visitor.visit_all(node.body, nopop=True)
-                visitor.emit("end")
-                precompiled_parts.append([[function_name, var_list, f"continue_fn{len(precompiled_parts)}"], visitor.output])
-
-        visitor = NodeVisitor(config=self.config,
-                              continue_nodes=continue_nodes,
-                              precompiled_parts=precompiled_parts)
-        self.output = []
+        visitor = ND()
 
         visitor.visit(py_ast_tree)
 

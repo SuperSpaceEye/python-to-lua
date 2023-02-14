@@ -14,7 +14,7 @@ class UnaryOperationDesc:
             "format": _DEFAULT_FORMAT,
         },
         ast.UAdd: {
-            "value": "",
+            "value": "+",
             "format": _DEFAULT_FORMAT,
         },
         ast.Not: {

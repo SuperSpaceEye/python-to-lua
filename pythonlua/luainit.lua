@@ -29,6 +29,7 @@ abs = math.abs
 ascii = string.byte
 chr = string.char
 int = tonumber
+float = tonumber
 str = tostring
 
 function all(iterable)
@@ -115,21 +116,33 @@ end
 function enumerate(t, start)
     start = start or 0
 
-    local data = t
-    if t._is_list then
-        data = t._data
-    end
+    if t == nil then
 
-    local i, v = next(data, nil)
-    return function()
-        local index, value = i, v
-        i, v = next(data, i)
+    elseif type(t) == "function" then
+        local i, v = start - 1, t()
+        return function()
+            local index, value = i, v
+            i, v = i+1, t()
+            if v == nil then
+                return nil
+            end
 
-        if index == nil then
-            return nil
+            return index + start - 1, value
         end
+    elseif t._is_list then
+        local data = t
+        data = t._data
+        local i, v = next(data, nil)
+        return function()
+            local index, value = i, v
+            i, v = next(data, i)
 
-        return index + start - 1, value
+            if index == nil then
+                return nil
+            end
+
+            return index + start - 1, value
+        end
     end
 end
 
