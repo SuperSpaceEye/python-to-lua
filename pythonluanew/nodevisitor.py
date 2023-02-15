@@ -527,9 +527,14 @@ class NodeVisitor(ast.NodeVisitor):
         self.emit("return result")
         self.emit("end)()")
     def visit_GeneratorExp(self, node: GeneratorExp) :pass
-    def visit_Await(self, node: Await) :pass
-    def visit_Yield(self, node: Yield) :pass
-    def visit_YieldFrom(self, node: YieldFrom) :pass
+    def visit_Await(self, node: Await):
+        # https://github.com/iamcco/async-await.lua
+        # https://github.com/ms-jpq/lua-async-await
+        raise NotImplementedError("await")
+    def visit_Yield(self, node: Yield):
+        raise NotImplementedError("yield")
+    def visit_YieldFrom(self, node: YieldFrom):
+        raise NotImplementedError("yield from")
     def visit_Compare(self, node: Compare):
         line = ""
 
