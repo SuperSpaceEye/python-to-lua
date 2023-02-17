@@ -1,4 +1,3 @@
-tabl = {}
 local function range(from, to, step)
     assert(from ~= nil)
 
@@ -22,6 +21,4 @@ local function range(from, to, step)
     end
 end
 
-tabl.range = range
-
-return tabl
+return range
