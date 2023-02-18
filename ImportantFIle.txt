@@ -1,0 +1,10 @@
+General info:
+1) del() doesn't null the object but just calls the __del__, so you must directly item[someidx] = nil. it will also not work for class attributes.
+
+CC:T info:
+1) mod uses java gc so it doesn't call __gc on cleanup, so it will also not call __del__.
+
+TODO:
+ 1) slices are separate lists, so a[::] = [] will do nothing. maybe create a.___slice_asgn(slice, item) which will replace slice assignment in compilator
+ 2) make error handler
+ 3) make "iterators" as pyobjects

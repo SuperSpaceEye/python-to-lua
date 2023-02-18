@@ -1,10 +1,63 @@
 -- TODO use super().__init__ logic
+require "staticmethod"
+str = str or require "str"
+
+--__STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE = __STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE or {
+--    calls = {},
+--    len = 0,
+--    wrapper = function(fn, caller)
+--        return function()
+--            local recursed = false
+--            print(caller)
+--            for _, v in ipairs(__STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls) do
+--                if rawequal(v, caller) then
+--                    recursed = true
+--                end
+--            end
+--
+--            if not recursed then
+--                table.insert(__STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls, caller)
+--                local result = fn(caller)
+--                table.remove(__STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls)
+--                return result
+--            else
+--                return pystr("...")
+--            end
+--        end
+--    end
+--}
+--
+--__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE = __REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE or {
+--    calls = {},
+--    len = 0,
+--    wrapper = function(fn, caller)
+--        return function()
+--            local recursed = false
+--            print(caller)
+--            for _, v in ipairs(__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls) do
+--                if rawequal(v, caller) then
+--                    recursed = true
+--                end
+--            end
+--
+--            if not recursed then
+--                table.insert(__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls, caller)
+--                local result = fn(caller)
+--                table.remove(__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls)
+--                return result
+--            else
+--                return pystr("...")
+--            end
+--        end
+--    end
+--}
 
 function class(class_init, inherited)
     inherited = inherited or {}
 
     local c = {}
     c.___is_pyobj = true
+    c.___is_none = false
 
     for i = #inherited, 1, -1 do
         for k, v in pairs(inherited[i]) do
@@ -38,6 +91,8 @@ function class(class_init, inherited)
                     return function(...)
                         return c[idx](object, ...)
                     end
+                elseif type(item) == "table" then
+                    return item
                 elseif item ~= nil then
                     return item
                 else
@@ -75,12 +130,16 @@ function class(class_init, inherited)
             __eq = function(tbl, other) return tbl.__eq__(other) end,
             __lt = function(tbl, other) return tbl.__lt__(other) end,
             __le = function(tbl, other) return tbl.__le__(other) end,
+
+            __gc = function(tbl) tbl.__del__() end
         })
 
         if type(object.__init__) == "function" then
             object.__init__(...)
         end
-
+        --print(object.__str__)
+        --object.__str__ = __STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.wrapper(object.__str__, object)
+        --object.__repr__ = __REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.wrapper(object.__repr__, object)
         return object
     end
     setmetatable(c, mt)

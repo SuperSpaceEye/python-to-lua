@@ -1,7 +1,7 @@
 function range_in(iter)
     local iter = iter.__iter__()
     return function()
-        return iter.__next__()
+        return iter.__next__(iter)
     end
 end
 

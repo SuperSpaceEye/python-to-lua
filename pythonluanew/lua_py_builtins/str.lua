@@ -1,20 +1,25 @@
-require "class"
-require "pyobj"
-range = require "range"
-operator_in = require "operator_in"
+str = {}
+local calc_key = (require "helper_functions")["calc_key"]
+class = class or require "class"
+pyobj = pyobj or require "pyobj"
+range = range or require "range"
+staticmethod = staticmethod or require "staticmethod"
+operator_in = operator_in or require "operator_in"
+none = none or require "none"
 
-pystr = class(function(pystr)
-    pystr.___name = "str"
-    pystr.___d = ""
-    pystr.___is_pystr = true
+str = class(function(str)
+    str.___name = "str"
+    str.___d = ""
+    str.___is_pystr = true
 
     -- TODO add encoding and errors??
-    function pystr.__init__(self, object, encoding, errors)
-        if object.___is_pyobj then
-            --if object.___is_pystr then
-            --    self = object
-            --    return
-            --end
+    function str.__init__(self, object, encoding, errors)
+        object = object or ""
+        if type(object) == "table" and object.___is_pyobj then
+            if object.___is_pystr then
+                self = object
+                return
+            end
             self.___d = object.__str__().___d
             return
         end
@@ -23,75 +28,51 @@ pystr = class(function(pystr)
     end
 
     --Lua has no way to actually get size of an object so "¯\_(:))_/¯"
-    function pystr.__sizeof__(self)
+    function str.__sizeof__(self)
         return #self.___d + 3 + 1
     end
 
-    function pystr.__add__(self, other)
-        if other.___is_pyobj then
-            return pystr(self.___d .. other.__str__().___d)
+    function str.__add__(self, other)
+        if type(other) == "table" and other.___is_pyobj then
+            return str(self.___d .. other.__str__().___d)
         end
-        return pystr(self.___d .. other)
+        return str(self.___d .. other)
     end
 
-    function pystr.__mul__(self, n)
-        if n.___is_pyobj then
+    function str.__mul__(self, n)
+        if type(n) == "table" and n.___is_pyobj then
             --TODO
-            return pystr(string.rep(self.___d, n.__int__().___d))
+            return str(string.rep(self.___d, n.__int__().___d))
         end
-        return pystr(string.rep(self.___d, n))
+        return str(string.rep(self.___d, n))
     end
 
-    function pystr.__str__(self) return self end
+    function str.__str__(self) return self end
 
-    function pystr.__len__(self)
+    function str.__len__(self)
         return #self.___d
     end
 
-    function pystr.___calc_key(self, key, give_error)
-        give_error = give_error or true
-        if key < 0 then
-            key = self.__len__() + key + 1
-            if key <= 0 then
-                if give_error then
-                    error("IndexError: string index out of range")
-                else
-                    key = 1
-                end
-            end
-            return key
-        end
-        if key > self.__len__() then
-            if give_error then
-                error("IndexError: string index out of range")
-            else
-                key = self.__len__()
-            end
-        end
-
-        return key + 1
-    end
-
-    function pystr.___one_index(self, key)
+    function str.___one_index(self, key)
         if type(key) ~= "number" then
             error("TypeError: string indices must be integers")
         end
 
-        key = self.___calc_key(key)
+        key = calc_key(self.__len__(), key)
         if key > self.__len__() then
             error("IndexError: string index out of range")
         end
 
-        return pystr(string.sub(self.___d, key, key))
+        return str(string.sub(self.___d, key, key))
     end
 
-    function pystr.___two_index(self, start, stop)
-        start = self.___calc_key(start)
-        stop  = self.___calc_key(stop)
-        return pystr(string.sub(self.___d, start, stop-1))
+    function str.___two_index(self, start, stop)
+        start = calc_key(self.__len__(), start)
+        stop  = calc_key(self.__len__(), stop)
+        return str(string.sub(self.___d, start, stop-1))
     end
 
-    function pystr.___three_index(self, start, stop, step)
+    function str.___three_index(self, start, stop, step)
         local temp = {}
         local ii = 1
 
@@ -104,10 +85,10 @@ pystr = class(function(pystr)
             temp_str = temp_str .. chr
         end
 
-        return pystr(temp_str)
+        return str(temp_str)
     end
 
-    function pystr.__getattr__(self, key)
+    function str.__getattr__(self, key)
         local v1
         local v2
         local v3
@@ -119,7 +100,6 @@ pystr = class(function(pystr)
         elseif type(key) == "number" then
             return self.___one_index(key)
         else
-            print(key)
             error("Incorrect var type")
         end
 
@@ -133,14 +113,12 @@ pystr = class(function(pystr)
     end
 
     --TODO replace with string.find()
-    function pystr.__contains__(self, o)
+    function str.__contains__(self, o)
         if o.___is_pystr ~= true and type(o) ~= "string" then
             error("Search element should be pystr or lua str") end
-        o = pystr(o)
-        --print("deb", self.__len__(), o.__len__())
+        o = str(o)
 
         local si = 0
-        --print(self.__len__(), self.___d, o.__len__(), o.___d)
         for i in range(self.__len__()) do
             if self[i].__str__().___d == o[si].__str__().___d then
                 si = si + 1
@@ -151,43 +129,57 @@ pystr = class(function(pystr)
         return false
     end
 
-    function pystr.__eq__(self, o)
+    function str.__eq__(self, o)
         if type(o) == "string" then return self.__str__() == o end
         if type(o) == "table" and o.___is_pystr then return self.__str__().___d == o.__str__().___d end
         return false
     end
 
-    function pystr.__lt__(self, o)
+    function str.__lt__(self, o)
         if type(o) == "string" then return self.__str__() < o end
         if type(o) == "table" and o.___is_pystr then return self.__str__().___d < o.__str__().___d end
         error("Cannot compare pystring and "..type(o))
     end
 
-    function pystr.__le__(self, o)
+    function str.__le__(self, o)
         if type(o) == "string" then return self.__str__() <= o end
         if type(o) == "table" and o.___is_pystr then return self.__str__().___d <= o.__str__().___d end
         error("Cannot compare pystring and "..type(o))
     end
 
-    function pystr.__repr__(self)
-        return pystr("'"..self.__str__().___d.."'")
+    function str.__repr__(self)
+        return str("'"..self.__str__().___d.."'")
     end
 
-    function pystr.__format__(self, format_spec)
+    function str.__format__(self, format_spec)
         --string.format()
         error("python formatting is not implemented")
     end
 
+    function str.__iter__(self)
+        return {i = 0,
+                max_pos = self.__len__(),
+                str = self,
+                __next__ = function(self)
+                    if self.i < self.max_pos then
+                        self.i = self.i + 1
+                        return self.str[self.i-1]
+                    else
+                        return nil
+                    end
+                end
+        }
+    end
 
-    function pystr.lower(self) return pystr(string.lower(self.___d)) end
-    function pystr.upper(self) return pystr(string.upper(self.___d)) end
-    function pystr.capitalize(self)
+    function str.lower(self) return str(string.lower(self.___d)) end
+    function str.upper(self) return str(string.upper(self.___d)) end
+    function str.capitalize(self)
         local fistchar = self[0].upper()
         local other_str = self[{1, -1}].lower()
         return fistchar+other_str
     end
-    function pystr.casefold(self) return self.lower() end
-    function pystr.center(self, num, char)
+    function str.casefold(self) return self.lower() end
+    function str.center(self, num, char)
         local len = self.__len__()
         if num <= len then
             return self
@@ -196,18 +188,18 @@ pystr = class(function(pystr)
         local tpad = num - len
         local rpad = math.floor(tpad/2)
         local lpad = tpad - rpad
-        local pychar = pystr(char)
+        local pychar = str(char)
 
         return (pychar*lpad)+self+(pychar*rpad)
     end
-    function pystr.count(self, value, start, stop)
-        value = pystr(value)
+    function str.count(self, value, start, stop)
+        value = str(value)
 
         start = start or 0
         stop = stop or self.__len__()
 
-        start = self.___calc_key(start)
-        stop  = self.___calc_key(stop)
+        start = calc_key(self.__len__(), start)
+        stop  = calc_key(self.__len__(), stop)
 
         local count = 0
         local val_i = 0
@@ -228,16 +220,16 @@ pystr = class(function(pystr)
         return count
     end
 
-    function pystr.encode(self, encoding, errors) error("Encoding not implemented") end
+    function str.encode(self, encoding, errors) error("Encoding not implemented") end
 
-    function pystr.endswith(self, value, start, stop)
-        value = pystr(value)
+    function str.endswith(self, value, start, stop)
+        value = str(value)
 
         start = start or 0
         stop = stop or self.__len__()
 
-        start = self.___calc_key(start)
-        stop  = self.___calc_key(stop)
+        start = self.calc_key(self.__len__(), start)
+        stop  = self.calc_key(self.__len__(), stop)
 
         -- if search boundary is less than value
         if stop - start < value.__len__() then return false end
@@ -248,31 +240,36 @@ pystr = class(function(pystr)
         return value == end_str
     end
 
-    function pystr.expandtabs(self, num)
-        return pystr(string.gsub(self.___d, "\t", (string.rep(" ", num))))
+    function str.expandtabs(self, num)
+        return str(string.gsub(self.___d, "\t", (string.rep(" ", num))))
     end
 
-    function pystr.find(self, sub, start, stop)
-        sub = pystr(sub)[{start, stop}]
+    function str.find(self, sub, start, stop)
+        start = start or 0
+        stop = stop or self.__len__()
+        sub = str(sub)
+        self = self[{start, stop}]
         local res = string.find(self.___d, sub.___d)[1]
         if res == nil then return -1 else return res-1 end
     end
 
-    function pystr.format(self, ...) return self.__format__(...) end
-    function pystr.format_map(self, ...) return self.__format__(...) end
+    function str.format(self, ...) return self.__format__(...) end
+    function str.format_map(self, ...) return self.__format__(...) end
 
-    function pystr.index(self, sub, start, stop)
+    function str.index(self, sub, start, stop)
+        start = start or 0
+        stop = stop or self.__len__()
         local res = self.find(sub, start, stop)
-        if res == -1 then error("ValueError: No substring '"..pystr(sub).___d.."' in string '"..self.___d.."'")
+        if res == -1 then error("ValueError: No substring '".. str(sub).___d.."' in string '"..self.___d.."'")
         else return res end
     end
 
-    function pystr.isalnum(self)
+    function str.isalnum(self)
         if self.__len__() == 0 then return false end
         return self.isalpha() or self.isdecimal() or self.isdigit() or self.isnumeric()
     end
 
-    function pystr.isalpha(self)
+    function str.isalpha(self)
         if self.__len__() == 0 then return false end
         for i in range(self.__len__()) do
             local char = self[i].___d
@@ -284,9 +281,9 @@ pystr = class(function(pystr)
         return true
     end
 
-    function pystr.isascii(self) return true end
+    function str.isascii(self) return true end
 
-    function pystr.isdecimal(self)
+    function str.isdecimal(self)
         if self.__len__() == 0 then return false end
         for i in range(self.__len__()) do
             local char = self[i].___d
@@ -298,11 +295,11 @@ pystr = class(function(pystr)
         return true
     end
 
-    function pystr.isdigit(self) return self.isdecimal() end
+    function str.isdigit(self) return self.isdecimal() end
 
     -- TODO implement https://docs.python.org/3/reference/lexical_analysis.html#identifiers
-    function pystr.isidentifier(self) error("isidentifier not implemented") end
-    function pystr.islower(self)
+    function str.isidentifier(self) error("isidentifier not implemented") end
+    function str.islower(self)
         local has_cased = false
 
         for i in range(self.__len__()) do
@@ -317,11 +314,11 @@ pystr = class(function(pystr)
 
         return self == self.lower()
     end
-    function pystr.isnumeric(self) return self.isdecimal() end
+    function str.isnumeric(self) return self.isdecimal() end
 
-    function pystr.isprintable(self) return true end
+    function str.isprintable(self) return true end
 
-    function pystr.isspace(self)
+    function str.isspace(self)
         if self.__len__() == 0 then return false end
 
         for i in range(self.__len__()) do
@@ -334,9 +331,9 @@ pystr = class(function(pystr)
     end
 
     --TODO implement
-    function pystr.istitle(self) error("istitle not implemented") end
+    function str.istitle(self) error("istitle not implemented") end
 
-    function pystr.isupper(self)
+    function str.isupper(self)
         local has_cased = false
 
         for i in range(self.__len__()) do
@@ -352,10 +349,10 @@ pystr = class(function(pystr)
         return self == self.upper()
     end
 
-    function pystr.join(iter)
-        local ret = pystr()
+    function str.join(self)
+        local ret = str()
         local add = false
-        for item in operator_in(iter) do
+        for item in operator_in(self) do
             if add then
                 ret = ret + self
                 add = false
@@ -366,8 +363,9 @@ pystr = class(function(pystr)
         return ret
     end
 
-    function pystr.ljust(self, width, fillchar)
-        fillchar = pystr(fillchar) or pystr(" ")
+    function str.ljust(self, width, fillchar)
+        fillchar = fillchar or " "
+        fillchar = str(fillchar)
 
         if width <= self.__len__() then return self end
         fillchar = fillchar * (width - self.__len__())
@@ -375,9 +373,19 @@ pystr = class(function(pystr)
         return self + fillchar
     end
 
-    function pystr.lstrip(self, chars)
+    function str.rjust(self, width, fillchar)
+        fillchar = fillchar or " "
+        fillchar = str(fillchar)
+
+        if width <= self.__len__() then return self end
+        fillchar = fillchar * (width - self.__len__())
+
+        return fillchar + self
+    end
+
+    function str.lstrip(self, chars)
         chars = chars or "  \n"
-        chars = pystr(chars)
+        chars = str(chars)
         local left = 0
         for i in range(self.__len__()) do
             if operator_in(self[i], chars) then
@@ -387,9 +395,9 @@ pystr = class(function(pystr)
         return self[{left, self.__len__()}]
     end
 
-    function pystr.rstrip(self, chars)
+    function str.rstrip(self, chars)
         chars = chars or "  \n"
-        chars = pystr(chars)
+        chars = str(chars)
         local left = -1
         for i in range(self.__len__()) do
             if operator_in(self[-(i+1)], chars) then
@@ -399,17 +407,87 @@ pystr = class(function(pystr)
         return self[{0, left+1}]
     end
 
-    function pystr.strip(self, chars) return self.lstrip(chars).rstrip(chars) end
+    function str.strip(self, chars) return self.lstrip(chars).rstrip(chars) end
 
-    function pystr.maketrans(x, y, z)
+    function str.maketrans(x, y, z)
+        print(x, y, z)
         error("Not implemented")
     end
 
-    return pystr
+    str.maketrans_DECORATOR = str.maketrans; str.maketrans = staticmethod(str.maketrans_DECORATOR)
+
+    function str.partition(self, sep)
+        local idx = self.find(sep)
+        if idx == -1 then return { self, str(), str()} end
+
+        error("Not implemented")
+    end
+
+    function str.rpartition(self, sep)
+        error("Not implemented")
+    end
+
+    function str.removeprefix(self, prefix)
+        prefix = str(prefix)
+        if self[{0, prefix.__len__()}] == prefix then return self[{prefix.__len__(), self.__len__()}] else return self end
+    end
+
+    function str.removesuffix(self, suffix)
+        suffix = str(suffix)
+        if self[{-suffix.__len__(), self.__len__()}] == suffix then return self[{0, self.__len__()-suffix.__len__()}] else return self end
+    end
+
+    function str.replace(self, old, new, count)
+        if count ~= nil then
+            return str(self.___d.gsub(old, new))
+        else
+            return str(self.___d.gsub(old, new, count))
+        end
+    end
+
+    function str.rfind(self, sub, start, stop)
+        start = start or 0
+        stop = stop or self.__len__()
+        sub = str(sub)
+        self = self[{start, stop}]
+        local _, res = string.find(self.___d, "^.*("..sub.___d..")")
+        if _ == nil then return -1 else return res-1-sub.__len__() end
+    end
+
+    function str.rindex(self, sub, start, stop)
+        start = start or 0
+        stop = stop or self.__len__()
+        local res = self.rfind(sub, start, stop)
+        if res == -1 then error("ValueError: No substring '".. str(sub).___d.."' in string '"..self.___d.."'")
+        else return res end
+    end
+
+    function str.split(self, sep, maxsplit)
+
+    end
+
+    function str.rsplit(self, sep, maxsplit)
+
+
+    end
+
+    function str.zfill(self, width)
+        if width <= self.__len__() then return self end
+        local has_leading = str()
+        local fill_num = width - self.__len__()
+        local str
+        if self[0].___d == "+" or self[0].___d == "-" then
+            has_leading = self[0]
+            fill_num = fill_num - 1
+            str = self[{1, self.__len__()}]
+        else
+            str = self
+        end
+
+        return has_leading + (str("0")*fill_num) + str
+    end
+
+    return str
 end, {pyobj})
 
-a = pystr("10")
-b = pystr("20")
-print(a[1].___d)
-print((a + b).___d)
-print(a > b)
+return str

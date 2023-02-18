@@ -1,4 +1,6 @@
-require "class"
+class = class or require "class"
+str = str or require "str"
+local None = None or require "none"
 
 local function t_not_implemented(method, name)
     error("Not implemented: \""..method.."\" method is not implemented for \""..name.."\".")
@@ -36,11 +38,11 @@ local pyObject = class(function(pyObject)
     function pyObject.__trunc__(self) t_not_implemented("__trunc__", self.___name) end
     function pyObject.__coerce__(self, other) t_not_implemented("__coerce__", self.___name) end
 
-    function pyObject.__str__(self) t_not_implemented("__str__", self.___name) end
-    function pyObject.__repr__(self) t_not_implemented("__repr__", self.___name) end
+    function pyObject.__str__(self) return self.__repr__() end
+    function pyObject.__repr__(self) return str(tostring(self)) end
     function pyObject.__unicode__(self) t_not_implemented("__unicode__", self.___name) end
     function pyObject.__format__(self, formatstr) t_not_implemented("__format__", self.___name) end
-    function pyObject.__hash__(self) t_not_implemented("__hash__", self.___name) end
+    pyObject.__hash__ = None
     function pyObject.__nonzero__(self) t_not_implemented("__nonzero__", self.___name) end
     -- TODO implement __dir__
     function pyObject.__dir__(self) t_not_implemented("__dir__", self.___name) end
@@ -48,7 +50,7 @@ local pyObject = class(function(pyObject)
 
     function pyObject.__getattr__(self, name) error("AttributeError: '"..self.___name.."' object has no attribute '"..name.."'.") end
     function pyObject.__setattr__(self, name, value) rawset(self, name, value) end
-    function pyObject.__delattr__(self, name) self[name]=nil end
+    function pyObject.__delattr__(self, name) t_not_implemented("__delattr__", self.___name) end
 
     function pyObject.__add__(self, other) t_not_implemented("__add__", self.___name) end
     function pyObject.__sub__(self, other) t_not_implemented("__sub__", self.___name) end
@@ -80,9 +82,9 @@ local pyObject = class(function(pyObject)
     function pyObject.__ror__(self, other) t_not_implemented("__ror__", self.___name) end
     function pyObject.__rxor__(self, other) t_not_implemented("__rxor__", self.___name) end
 
-    function pyObject.__lt__(self, other) t_not_implemented("__lt__", self.___name) end
-    function pyObject.__le__(self, other) t_not_implemented("__le__", self.___name) end
-    function pyObject.__eq__(self, other) t_not_implemented("__eq__", self.___name) end
+    --function pyObject.__lt__(self, other) t_not_implemented("__lt__", self.___name) end
+    --function pyObject.__le__(self, other) t_not_implemented("__le__", self.___name) end
+    --function pyObject.__eq__(self, other) t_not_implemented("__eq__", self.___name) end
     function pyObject.__ne__(self, other) return ~self.__eq__(other) end
     function pyObject.__gt__(self, other) return ~self.__lt__(other) end
     function pyObject.__ge__(self, other) return ~self.__lt__(other) or self.__eq__(other) end
@@ -112,6 +114,8 @@ local pyObject = class(function(pyObject)
     function pyObject.__kwdefaults__(self) t_not_impl_no_over("__kwdefaults__", self.___name) end
     function pyObject.__instancecheck__(self, instance) t_not_impl_no_over("__instancecheck__", self.___name) end
     function pyObject.__subclasscheck__(self, subclass) t_not_impl_no_over("__subclasscheck__", self.___name) end
+    function pyObject.__reduce__(self) t_not_impl_no_over("__reduce__", self.___d) end
+    function pyObject.__reduce_ex__(self, protocol) t_not_impl_no_over("__reduce__", self.___d) end
     --TODO special handling for __dict__
     --TODO add type checks
     function pyObject.__dict__(self, key, value)
