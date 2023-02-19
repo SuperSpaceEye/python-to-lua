@@ -404,7 +404,7 @@ function staticmethod(old_fun)
     return wrapper
 end
 
-function operator_in(item, items)
+function op_in(item, items)
     if type(items) == "table" then
         for v in items do
             if v == item then

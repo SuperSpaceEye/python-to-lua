@@ -1,4 +1,4 @@
-function staticmethod(fun)
+local function staticmethod(fun)
     local wrapper = {
         is_staticmethod = true,
         fn = fun
@@ -22,3 +22,5 @@ function staticmethod(fun)
     })
     return wrapper
 end
+
+return staticmethod

@@ -1,16 +1,16 @@
-str = {}
+local str = {}
 local calc_key = (require "helper_functions")["calc_key"]
-class = class or require "class"
-pyobj = pyobj or require "pyobj"
-range = range or require "range"
-staticmethod = staticmethod or require "staticmethod"
-operator_in = operator_in or require "operator_in"
-none = none or require "none"
+local class = class or require "class"
+local pyobj = pyobj or require "pyobj"
+local range = range or require "range"
+local staticmethod = staticmethod or require "staticmethod"
+local op_in = op_in or require "operator_in"
+local None = none or require "none"
+local iter_obj_creator = iter_obj_creator or require "iter_obj_creator"
 
 str = class(function(str)
     str.___name = "str"
     str.___d = ""
-    str.___is_pystr = true
 
     -- TODO add encoding and errors??
     function str.__init__(self, object, encoding, errors)
@@ -76,7 +76,7 @@ str = class(function(str)
         local temp = {}
         local ii = 1
 
-        for i in range(start, stop, step) do
+        for i in op_in(range(start, stop, step)) do
             temp[ii] = self[i].__str__().___d
             ii = ii+1
         end
@@ -119,7 +119,7 @@ str = class(function(str)
         o = str(o)
 
         local si = 0
-        for i in range(self.__len__()) do
+        for i in op_in(range(self.__len__())) do
             if self[i].__str__().___d == o[si].__str__().___d then
                 si = si + 1
             end
@@ -157,18 +157,35 @@ str = class(function(str)
     end
 
     function str.__iter__(self)
-        return {i = 0,
-                max_pos = self.__len__(),
-                str = self,
-                __next__ = function(self)
-                    if self.i < self.max_pos then
-                        self.i = self.i + 1
-                        return self.str[self.i-1]
-                    else
-                        return nil
-                    end
+        local iter = iter_obj_creator()
+        iter.i = 0
+        iter.max_pos = self.__len__()
+        iter.str = self
+        iter.__next__ = function(self)
+            if self.i < self.max_pos then
+                self.i = self.i + 1
+                return self.str[self.i-1]
+            else
+                return nil
+            end
+        end
+        return iter
+    end
+
+    function str.__reversed__(self)
+        local iter = iter_obj_creator()
+        iter.i = self.__len__()-1
+        iter.min_pos = 0
+        iter.str = self
+        iter.__next__ = function(self)
+                if self.i >= self.max_pos then
+                    self.i = self.i - 1
+                    return self.str[self.i+1]
+                else
+                    return nil
                 end
-        }
+            end
+        return iter
     end
 
     function str.lower(self) return str(string.lower(self.___d)) end
@@ -271,7 +288,7 @@ str = class(function(str)
 
     function str.isalpha(self)
         if self.__len__() == 0 then return false end
-        for i in range(self.__len__()) do
+        for i in op_in(range(self.__len__())) do
             local char = self[i].___d
 
             if ~((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
@@ -285,7 +302,7 @@ str = class(function(str)
 
     function str.isdecimal(self)
         if self.__len__() == 0 then return false end
-        for i in range(self.__len__()) do
+        for i in op_in(range(self.__len__())) do
             local char = self[i].___d
 
             if ~(char >= "0" and char <= "9") then
@@ -302,7 +319,7 @@ str = class(function(str)
     function str.islower(self)
         local has_cased = false
 
-        for i in range(self.__len__()) do
+        for i in op_in(range(self.__len__())) do
             local char = self[i].___d
             if ((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
                 has_cased = true
@@ -321,7 +338,7 @@ str = class(function(str)
     function str.isspace(self)
         if self.__len__() == 0 then return false end
 
-        for i in range(self.__len__()) do
+        for i in op_in(range(self.__len__())) do
             local ch = self[i].___d
             if ~(ch >= "\0" and ch <= " ") then
                 return false
@@ -336,7 +353,7 @@ str = class(function(str)
     function str.isupper(self)
         local has_cased = false
 
-        for i in range(self.__len__()) do
+        for i in op_in(range(self.__len__())) do
             local char = self[i].___d
             if ((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
                 has_cased = true
@@ -352,7 +369,7 @@ str = class(function(str)
     function str.join(self)
         local ret = str()
         local add = false
-        for item in operator_in(self) do
+        for item in op_in(self) do
             if add then
                 ret = ret + self
                 add = false
@@ -387,8 +404,8 @@ str = class(function(str)
         chars = chars or "  \n"
         chars = str(chars)
         local left = 0
-        for i in range(self.__len__()) do
-            if operator_in(self[i], chars) then
+        for i in op_in(range(self.__len__())) do
+            if op_in(self[i], chars) then
                 left = left + 1
             else break end
         end
@@ -399,8 +416,8 @@ str = class(function(str)
         chars = chars or "  \n"
         chars = str(chars)
         local left = -1
-        for i in range(self.__len__()) do
-            if operator_in(self[-(i+1)], chars) then
+        for i in op_in(range(self.__len__())) do
+            if op_in(self[-(i+1)], chars) then
                 left = left - 1
             else break end
         end

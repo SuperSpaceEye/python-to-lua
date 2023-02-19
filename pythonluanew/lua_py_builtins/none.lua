@@ -1,11 +1,10 @@
-None = {}
-class = class or require "class"
-pyobj = pyobj or require "pyobj"
-str = str or require "str"
+local None = {}
+local class = class or require "class"
+local pyobj = pyobj or require "pyobj"
+local str = str or require "str"
 
 None = class(function(None)
-    None.___name = "None"
-    None.___is_none = true
+    None.___name = "NoneType"
     function None.__setattr__(self, key, value) end
     function None.__str__(self) return str("None") end
     function None.__eq__(other) return other.___name == "None" end

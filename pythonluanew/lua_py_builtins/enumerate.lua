@@ -1,8 +1,8 @@
-function enumerate(t, start)
+local is_pyobj = (require "helper_functions").is_pyobj
+local function enumerate(t, start)
     start = start or 0
 
-    if t == nil then
-
+    if t == nil then error("nil object")
     elseif type(t) == "function" then
         local i, v = start - 1, t()
         return function()
@@ -14,19 +14,19 @@ function enumerate(t, start)
 
             return index + start - 1, value
         end
-    elseif t._is_list or t._is_str then
-        local data = t
-        data = t._data
-        local i, v = next(data, nil)
+    elseif is_pyobj(t) then
+        local iter = t.__iter__()
+        local i = -1
         return function()
-            local index, value = i, v
-            i, v = next(data, i)
-
-            if index == nil then
+            local val = iter.__next__()
+            i = i + 1
+            if val ~= nil then
+                return i + start - 1, val
+            else
                 return nil
             end
-
-            return index + start - 1, value
         end
     end
 end
+
+return enumerate

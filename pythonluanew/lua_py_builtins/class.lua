@@ -1,6 +1,6 @@
 -- TODO use super().__init__ logic
-require "staticmethod"
-str = str or require "str"
+--local staticmethod = staticmethod or require "staticmethod"
+--local str = str or require "str"
 
 --__STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE = __STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE or {
 --    calls = {},
@@ -26,33 +26,8 @@ str = str or require "str"
 --        end
 --    end
 --}
---
---__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE = __REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE or {
---    calls = {},
---    len = 0,
---    wrapper = function(fn, caller)
---        return function()
---            local recursed = false
---            print(caller)
---            for _, v in ipairs(__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls) do
---                if rawequal(v, caller) then
---                    recursed = true
---                end
---            end
---
---            if not recursed then
---                table.insert(__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls, caller)
---                local result = fn(caller)
---                table.remove(__REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.calls)
---                return result
---            else
---                return pystr("...")
---            end
---        end
---    end
---}
 
-function class(class_init, inherited)
+local function class(class_init, inherited)
     inherited = inherited or {}
 
     local c = {}
@@ -137,7 +112,6 @@ function class(class_init, inherited)
         if type(object.__init__) == "function" then
             object.__init__(...)
         end
-        --print(object.__str__)
         --object.__str__ = __STR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.wrapper(object.__str__, object)
         --object.__repr__ = __REPR__METHOD_CONTROLLER_DO_NOT_OVERWRITE.wrapper(object.__repr__, object)
         return object

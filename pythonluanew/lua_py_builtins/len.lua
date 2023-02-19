@@ -1,16 +1,8 @@
-function len(item)
-    if type(item) == "string" then
-        return string.len(item)
-    end
-    if type(item) == "table" then
-        if item._is_list == true then
+local is_pyobj = is_pyobj or (require "helper_functions").is_pyobj
 
-        elseif item._is_dict == true then
-
-        elseif item._is_str then
-
-        else
-            return #item
-        end
-    end
+local function len(item)
+    if not is_pyobj(item) then return #item end
+    return item.__len__()
 end
+
+return len

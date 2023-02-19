@@ -1,11 +1,11 @@
-function range_in(iter)
+local function range_in(iter)
     local iter = iter.__iter__()
     return function()
         return iter.__next__(iter)
     end
 end
 
-function operator_in(item, items)
+local function op_in(item, items)
     if items == nil then
         return range_in(item)
     else
@@ -15,4 +15,4 @@ function operator_in(item, items)
     end
 end
 
-return operator_in
+return op_in

@@ -1,19 +1,21 @@
-class = require "class"
-pyobj = require "pyobj"
-operator_in = require "operator_in"
-str = str or require "str"
-local helper_functions = (require "helper_functions")
+local class = class or  require "class"
+local pyobj = pyobj or require "pyobj"
+local op_in = op_in or require "operator_in"
+local str = str or require "str"
+local del = del or require "del"
+local None = None or  require "none"
+local zip = zip or require "zip"
+local helper_functions = helper_functions or (require "helper_functions")
+local range = range or require "range"
+local iter_obj_creator = iter_obj_creator or require "iter_obj_creator"
+local enumerate = enumerate or require "enumerate"
+
 local calc_key = helper_functions.py_calc_key
 local is_pyobj = helper_functions.is_pyobj
-local del = require "del"
-local None = require "none"
-local zip = require "zip"
 
-
-list = class(function(list)
+local list = class(function(list)
     list.___name = "list"
     list.___d = {}
-    list.___is_pylist = true
     list.___size = 0
     list.___had_repr = false
     list.___had_str = false
@@ -27,7 +29,7 @@ list = class(function(list)
         if type(obj) == "table" and obj.___is_pyobj then
             if obj.___is_pylist then self = obj
             else
-                for item in operator_in(obj) do
+                for item in op_in(obj) do
                     self.append(item)
                 end
             end
@@ -61,7 +63,7 @@ list = class(function(list)
 
         local slice = list()
 
-        for item in range(key[1], key[2], key[3]) do
+        for item in op_in(range(key[1], key[2], key[3])) do
             slice.append(item)
         end
 
@@ -83,35 +85,35 @@ list = class(function(list)
     function list.__sizeof__(self) return self.___size end
 
     function list.__iter__(self)
-        return {
-            i = 0,
-            max_pos = self.__len__(),
-            _list = self,
-            __next__ = function(self)
-                if self.i < self.max_pos then
-                    self.i = self.i + 1
-                    return self._list[self.i-1]
-                else
-                    return nil
-                end
+        local iter = iter_obj_creator()
+        iter.i = 0
+        iter.max_pos = self.__len__()
+        iter.list = self
+        iter.__next__ = function(self)
+            if self.i < self.max_pos then
+                self.i = self.i + 1
+                return self.list[self.i-1]
+            else
+                return nil
             end
-        }
+        end
+        return iter
     end
 
     function list.__reversed__(self)
-        return {
-            i = self.__len__()-1,
-            min_pos = 0,
-            _list = self,
-            __next__ = function(self)
+        local iter = iter_obj_creator()
+        iter.i = self.__len__()-1
+        iter.min_pos = 0
+        iter.list = self
+        iter.__next__ = function(self)
                 if self.i >= self.max_pos then
                     self.i = self.i - 1
-                    return self._list[self.i+1]
+                    return self.list[self.i+1]
                 else
                     return nil
                 end
             end
-        }
+        return iter
     end
 
     function list.__str__(self)
@@ -121,23 +123,23 @@ list = class(function(list)
         end
 
         self.___had_str = true
-        local str = str("[")
+        local r_str = str("[")
         local add = false
-        for item in operator_in(self) do
-            if add then str = str + ", " end
+        for item in op_in(self) do
+            if add then r_str = r_str + ", " end
             if type(item) == "table" and item.___is_pyobj then
-                str = str + item.__repr__()
+                r_str = r_str + item.__repr__()
                 add = true
             elseif type(item) == "number" or type(item) == "string" then
-                str = str + item
+                r_str = r_str + item
                 add = true
             else
                 error("Niooo")
             end
         end
-        str = str + "]"
+        r_str = r_str + "]"
         self.___had_str = false
-        return str
+        return r_str
     end
 
     function list.__repr__(self)
@@ -154,12 +156,12 @@ list = class(function(list)
     function list.__contains__(self, x)
         if is_pyobj(x) then
             if x.__eq__ ~= nil then
-                for item in operator_in(self) do if x == item then return true end end
+                for item in op_in(self) do if x == item then return true end end
             else
-                for item in operator_in(self) do if x.__repr__() == item then return true end end
+                for item in op_in(self) do if x.__repr__() == item then return true end end
             end
         else
-            for item in operator_in(self) do if rawequal(x, item) then return true end end
+            for item in op_in(self) do if rawequal(x, item) then return true end end
         end
         return false
     end
@@ -194,7 +196,7 @@ list = class(function(list)
 
         local copy = self.copy()
         if mul == 1 then return copy end
-        for _ in range(mul-1) do
+        for _ in op_in(range(mul-1)) do
             copy.extend(self)
         end
         return copy
@@ -206,7 +208,7 @@ list = class(function(list)
     end
 
     function list.extend(self, iter)
-        for item in operator_in(iter) do
+        for item in op_in(iter) do
             self.append(item)
         end
     end
@@ -214,16 +216,16 @@ list = class(function(list)
     function list.insert(self, i, x)
         i = calc_key(self.__len__(), i, false)
         self.___size = self.___size + 1
-        for _i in range(self.__len__()-1, i, -1) do
+        for _i in op_in(range(self.__len__()-1, i, -1)) do
             self[_i] = self[_i-1]
         end
         self[i] = x
     end
 
     function list.remove(self, x)
-        for i, item in enumerate(operator_in(self)) do
+        for i, item in enumerate(op_in(self)) do
             if rawequal(item, x) then
-                for _i in range(self.__len__()-1, i, -1) do
+                for _i in op_in(range(self.__len__()-1, i, -1)) do
                     self[_i-1] = self[_i]
                 end
                 del(self[self.__len__()-1])
@@ -240,7 +242,7 @@ list = class(function(list)
 
         local item = self[i]
 
-        for _i in range(self.__len__()-1, i, -1) do
+        for _i in op_in(range(self.__len__()-1, i, -1)) do
             self[_i-1] = self[_i]
         end
         self[self.__len__()-1] = nil
@@ -250,7 +252,7 @@ list = class(function(list)
     end
 
     function list.clear(self)
-        for item in operator_in(self) do
+        for item in op_in(self) do
             del(item)
         end
         self.___d = {}
@@ -271,12 +273,12 @@ list = class(function(list)
         end
         if is_pyobj(x) then
             if x.__eq__ ~= nil then
-                for i, item in enumerate(operator_in(slice)) do if x == item then return i end end
+                for i, item in enumerate(op_in(slice)) do if x == item then return i end end
             else
-                for i, item in enumerate(operator_in(slice)) do if x.__repr__() == item then return i end end
+                for i, item in enumerate(op_in(slice)) do if x.__repr__() == item then return i end end
             end
         else
-            for i, item in enumerate(operator_in(slice)) do if rawequal(x, item) then return i end end
+            for i, item in enumerate(op_in(slice)) do if rawequal(x, item) then return i end end
         end
 
         error("ValueError:")
@@ -286,12 +288,12 @@ list = class(function(list)
         local num = 0
         if is_pyobj(x) then
             if x.__eq__ ~= nil then
-                for item in operator_in(self) do if x == item then num = num + 1 end end
+                for item in op_in(self) do if x == item then num = num + 1 end end
             else
-                for item in operator_in(self) do if x.__repr__() == item then num = num + 1 end end
+                for item in op_in(self) do if x.__repr__() == item then num = num + 1 end end
             end
         else
-            for item in operator_in(self) do if rawequal(x, item) then num = num + 1 end end
+            for item in op_in(self) do if rawequal(x, item) then num = num + 1 end end
         end
         return num
     end
@@ -309,7 +311,7 @@ list = class(function(list)
     end
 
     function list.reverse(self)
-        for i in range(0, math.floor(self.__len__()/2)) do
+        for i in op_in(range(0, math.floor(self.__len__()/2))) do
             print(i, -(i+1))
             self[i], self[-(i+1)] = self[-(i+1)], self[i]
         end
@@ -323,9 +325,5 @@ list = class(function(list)
 
     return list
 end, {pyobj})
-
---local b = list({3, 4, 5, 6, 7})
---
---print(b.__str__().___d)
 
 return list

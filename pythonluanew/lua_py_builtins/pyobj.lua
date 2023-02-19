@@ -1,5 +1,5 @@
-class = class or require "class"
-str = str or require "str"
+local class = class or require "class"
+local str = str or require "str"
 local None = None or require "none"
 
 local function t_not_implemented(method, name)
@@ -128,42 +128,5 @@ local pyObject = class(function(pyObject)
 
     return pyObject
 end, {})
-
-
---local Test1 = class(function(Test1)
---    Test1.___name = "Test1"
---    function Test1.__init__(self)
---        print("deb test1", self.super().___name)
---        Test1.super().__init__(self)
---        self.test = 10
---        print("Test1 initialized")
---    end
---
---    function Test1.print_test(self)
---        print(self.test)
---    end
---    return Test1
---end, {pyObject})
---
---local Test2 = class(function(Test2)
---    Test2.___name = "Test2"
---    function Test2.__init__(self)
---        print("Test2 initialization start")
---        Test2.super().__init__(self)
---        self.test = 20
---        print("Test2 initialized")
---    end
---
---    function Test2.print_test(self)
---        print(self.test)
---    end
---    return Test2
---end, {Test1})
---
---a = Test1()
---a.print_test()
---
---b = Test2()
---b.print_test()
 
 return pyObject
