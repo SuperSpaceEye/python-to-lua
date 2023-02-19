@@ -1,4 +1,4 @@
-local is_pyobj = is_pyobj or (require "helper_functions").is_pyobj
+local is_pyobj = (require "helper_functions").is_pyobj
 
 local function len(item)
     if not is_pyobj(item) then return #item end

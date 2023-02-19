@@ -1,7 +1,8 @@
 local None = {}
-local class = class or require "class"
-local pyobj = pyobj or require "pyobj"
-local str = str or require "str"
+package.loaded[...] = None
+local class = require "class"
+local pyobj = require "pyobj"
+local str = require "str"
 
 None = class(function(None)
     None.___name = "NoneType"

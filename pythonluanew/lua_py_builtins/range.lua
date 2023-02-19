@@ -1,10 +1,12 @@
-local pyobj = pyobj or require "pyobj"
-local str = str or require "str"
-local pytype = pytype or require "type"
-local iter_obj_creator = iter_obj_creator or require "iter_obj_creator"
-local class = class or require "class"
+local range = {}
+package.loaded[...] = range
+local pyobj = require "pyobj"
+local str = require "str"
+local pytype = require "type"
+local iter_obj_creator = require "iter_obj_creator"
+local class = require "class"
 
-local range = class(function(range)
+range = class(function(range)
     range.___name = "range"
 
     function range.__init__(self, start, stop, step)
@@ -12,8 +14,8 @@ local range = class(function(range)
         if stop == nil then stop = start; start = 0 end
         if step == nil then step = 1 end
         -- TODO check for __index__
-        if math.floor(step) ~= start then error("start should be integer") end
-        if math.floor(step) ~= stop then error("stop should be integer") end
+        if math.floor(start) ~= start then error("start should be integer") end
+        if math.floor(stop) ~= stop then error("stop should be integer") end
         if math.floor(step) ~= step then error("step should be integer") end
         if step == 0 then error("step can't be 0") end
 

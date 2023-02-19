@@ -1,14 +1,14 @@
 local str = {}
+package.loaded[...] = str
 local calc_key = (require "helper_functions")["calc_key"]
-local class = class or require "class"
-local pyobj = pyobj or require "pyobj"
-local range = range or require "range"
-local staticmethod = staticmethod or require "staticmethod"
-local op_in = op_in or require "operator_in"
-local None = none or require "none"
-local iter_obj_creator = iter_obj_creator or require "iter_obj_creator"
+local class = require "class"
+local pyobj = require "pyobj"
+local range = require "range"
+local staticmethod = require "staticmethod"
+local op_in = require "operator_in"
+local iter_obj_creator = require "iter_obj_creator"
 
-str = class(function(str)
+local str = class(function(str)
     str.___name = "str"
     str.___d = ""
 

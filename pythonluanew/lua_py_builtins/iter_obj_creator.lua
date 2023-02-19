@@ -1,4 +1,4 @@
-local str = str or require "str"
+local str = require "str"
 
 local function iter_obj_creator()
     return {

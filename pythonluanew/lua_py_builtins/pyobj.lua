@@ -1,6 +1,7 @@
-local class = class or require "class"
-local str = str or require "str"
-local None = None or require "none"
+ pyobj = {}
+ class = class or require "class"
+ str = str or require "str"
+ None = None or require "none"
 
 local function t_not_implemented(method, name)
     error("Not implemented: \""..method.."\" method is not implemented for \""..name.."\".")
@@ -11,7 +12,7 @@ local function t_not_impl_no_over(method, name)
 end
 
 --TODO add python errors ???
-local pyObject = class(function(pyObject)
+pyobj = class(function(pyObject)
     pyObject.___name = "pyObject"
     function pyObject.__new__(cls, other) end
     function pyObject.__init__(self, other) print("Base init") end
@@ -129,4 +130,4 @@ local pyObject = class(function(pyObject)
     return pyObject
 end, {})
 
-return pyObject
+return pyobj

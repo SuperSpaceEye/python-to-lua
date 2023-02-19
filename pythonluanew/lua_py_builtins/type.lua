@@ -1,5 +1,5 @@
-local is_pyobj = is_pyobj or (require "helper_functions").is_pyobj
-local str = str or require "str"
+local is_pyobj = (require "helper_functions").is_pyobj
+local str = require "str"
 
 local lua_types = {table="<lua_table>",
                    string="<lua_string>",

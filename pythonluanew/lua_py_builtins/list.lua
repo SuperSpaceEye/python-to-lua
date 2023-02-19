@@ -1,14 +1,16 @@
-local class = class or  require "class"
-local pyobj = pyobj or require "pyobj"
-local op_in = op_in or require "operator_in"
-local str = str or require "str"
-local del = del or require "del"
-local None = None or  require "none"
-local zip = zip or require "zip"
-local helper_functions = helper_functions or (require "helper_functions")
-local range = range or require "range"
-local iter_obj_creator = iter_obj_creator or require "iter_obj_creator"
-local enumerate = enumerate or require "enumerate"
+local list = {}
+package.loaded[...] = list
+local class = require "class"
+local pyobj = require "pyobj"
+local op_in = require "operator_in"
+local str = require "str"
+local del = require "del"
+local None = require "none"
+local zip = require "zip"
+local helper_functions = (require "helper_functions")
+local range = require "range"
+local iter_obj_creator = require "iter_obj_creator"
+local enumerate = require "enumerate"
 
 local calc_key = helper_functions.py_calc_key
 local is_pyobj = helper_functions.is_pyobj
@@ -19,6 +21,8 @@ local list = class(function(list)
     list.___size = 0
     list.___had_repr = false
     list.___had_str = false
+    list.___left_bracket = "["
+    list.___right_bracket = "]"
 
     function list.__init__(self, obj)
         self.___d = {}
@@ -26,8 +30,8 @@ local list = class(function(list)
         self.___had_repr = false
         self.___had_str = false
 
-        if type(obj) == "table" and obj.___is_pyobj then
-            if obj.___is_pylist then self = obj
+        if is_pyobj(obj) then
+            if obj.___name == "list" then self = obj
             else
                 for item in op_in(obj) do
                     self.append(item)
@@ -39,8 +43,7 @@ local list = class(function(list)
                 self.___d[i] = obj[i]
                 i = i + 1
             end
-            --print("===")
-            self.___size = i-1
+            self.___size = i
         end
     end
 
@@ -119,11 +122,11 @@ local list = class(function(list)
     function list.__str__(self)
         if self.___had_str then
             self.___had_str = false
-            return str("[...]")
+            return str(self.___left_bracket.."..."..self.___right_bracket)
         end
 
         self.___had_str = true
-        local r_str = str("[")
+        local r_str = str(self.___left_bracket)
         local add = false
         for item in op_in(self) do
             if add then r_str = r_str + ", " end
@@ -137,7 +140,7 @@ local list = class(function(list)
                 error("Niooo")
             end
         end
-        r_str = r_str + "]"
+        r_str = r_str + self.___right_bracket
         self.___had_str = false
         return r_str
     end
@@ -145,7 +148,7 @@ local list = class(function(list)
     function list.__repr__(self)
         if self.___had_repr then
             self.___had_repr = false
-            return str("[...]")
+            return str(self.___left_bracket.."..."..self.___right_bracket)
         end
         self.___had_repr = true
         local ret = self.__str__()
@@ -168,7 +171,7 @@ local list = class(function(list)
 
     function list.__eq__(self, o)
         if not is_pyobj(o) then return false end
-        if not o.___is_pylist then return false end
+        if pytype(o) ~= pytype(self) then return false end
         if self.__len__() ~= o.__len__() then return false end
 
         for it1, it2 in zip(self, o) do
