@@ -12,7 +12,7 @@ local function py_calc_key(len, key, give_error)
         end
         return key
     end
-    if key >= len then
+    if key > len then
         if give_error then
             error("IndexError: index out of range")
         else
@@ -32,6 +32,12 @@ local function is_pyobj(o)
     return type(o) == "table" and o.___is_pyobj
 end
 
+-- TODO
+local function is_whitespace(char)
+    return char == " " or char == "\t" or char == "\n" or char == "\v" or char == "\f"
+end
+
 return {calc_key=calc_key,
         py_calc_key=py_calc_key,
-        is_pyobj=is_pyobj}
+        is_pyobj=is_pyobj,
+        is_whitespace=is_whitespace}

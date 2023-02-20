@@ -3,6 +3,7 @@ package.loaded[...] = str
 local helper_functions = (require "helper_functions")
 local calc_key = helper_functions.calc_key
 local is_pyobj = helper_functions.is_pyobj
+local is_whitespace = helper_functions.is_whitespace
 local class = require "class"
 local pyobj = require "pyobj"
 local range = require "range"
@@ -80,7 +81,7 @@ local str = class(function(str)
         local ii = 1
 
         for i in op_in(range(start, stop, step)) do
-            temp[ii] = self[i].__str__().___d
+            temp[ii] = self[i].___d
             ii = ii+1
         end
         local temp_str = ""
@@ -121,9 +122,12 @@ local str = class(function(str)
             error("Search element should be pyobj or lua str") end
         o = str(o)
 
+        if o.__len__() == 0 then return false end
+
         local si = 0
         for i in op_in(range(self.__len__())) do
-            if self[i].__str__().___d == o[si].__str__().___d then
+            --print(i, self.__len__(), si, o.__len__())
+            if self[i].___d == o[si].___d then
                 si = si + 1
             end
 
@@ -133,25 +137,25 @@ local str = class(function(str)
     end
 
     function str.__eq__(self, o)
-        if type(o) == "string" then return self.__str__() == o end
+        if type(o) == "string" then return self.___d == o end
         if is_pyobj(o) then return self.___d == o.__str__().___d end
         return false
     end
 
     function str.__lt__(self, o)
-        if type(o) == "string" then return self.__str__() < o end
+        if type(o) == "string" then return self.___d < o end
         if is_pyobj(o) then return self.___d < o.__str__().___d end
         error("Cannot compare pystring and "..type(o))
     end
 
     function str.__le__(self, o)
-        if type(o) == "string" then return self.__str__() <= o end
+        if type(o) == "string" then return self.___d <= o end
         if is_pyobj(o) then return self.___d <= o.__str__().___d end
         error("Cannot compare pystring and "..type(o))
     end
 
     function str.__repr__(self)
-        return str("'"..self.__str__().___d.."'")
+        return str("'"..self.___d.."'")
     end
 
     function str.__format__(self, format_spec)
@@ -181,13 +185,13 @@ local str = class(function(str)
         iter.min_pos = 0
         iter.str = self
         iter.__next__ = function(self)
-                if self.i >= self.max_pos then
-                    self.i = self.i - 1
-                    return self.str[self.i+1]
-                else
-                    return nil
-                end
+            if self.i >= self.max_pos then
+                self.i = self.i - 1
+                return self.str[self.i+1]
+            else
+                return nil
             end
+        end
         return iter
     end
 
@@ -482,12 +486,103 @@ local str = class(function(str)
         else return res end
     end
 
-    function str.split(self, sep, maxsplit)
+    --TODO refactor/rework
+    local function split_with_separator(self, sep, maxsplit, list)
+        sep = str(sep)
+        local sep_len = sep.__len__()
 
+        maxsplit = maxsplit or self.__len__()
+        if maxsplit < 0 then maxsplit = self.__len__() end
+        local chars = str()
+        local splited = list()
+
+        local pos = 0
+        local max_pos = self.__len__()
+
+
+        while maxsplit > 0 and pos < max_pos do
+            --local chr = self[pos]
+            print(self[{pos, pos+sep_len}].___d, sep.___d, chars.___d, self[{pos, pos+sep_len}].___d == sep.___d)
+            if pos+sep_len+1 > max_pos then break end
+            if self[{pos, pos+sep_len}] == sep then
+                splited.append(chars)
+                chars = str()
+                maxsplit = maxsplit - 1
+                pos = pos + sep_len - 1
+            else
+                chars = chars + self[pos]
+            end
+
+            pos = pos + 1
+        end
+
+        chars = chars + self[{pos, max_pos}]
+
+        if chars.__len__() > 0 then splited.append(chars) end
+
+        return splited
+    end
+
+    --TODO refactor/rework
+    local function split_whitespace(self, maxsplit, list)
+        maxsplit = maxsplit or self.__len__()
+        if maxsplit < 0 then maxsplit = self.__len__() end
+        local chars = str()
+        local splited = list()
+
+        local pos = 0
+        local max_pos = self.__len__()
+
+        while maxsplit > 0 and pos < max_pos do
+            --local chr = self[pos]
+            if is_whitespace(self[pos].___d) then
+                if chars.__len__() > 0 then
+                    splited.append(chars)
+                    chars = str()
+                    maxsplit = maxsplit - 1
+                    --pos = pos + 1
+                end
+            else
+                chars = chars + self[pos]
+            end
+
+            pos = pos + 1
+        end
+
+        chars = chars + self[{pos, max_pos}].lstrip()
+
+        if chars.__len__() > 0 then splited.append(chars) end
+
+        return splited
+    end
+
+    function str.split(self, sep, maxsplit)
+        local list = require "list"
+
+        if sep ~= nil then return split_with_separator(self, sep, maxsplit, list) end
+        return split_whitespace(self, maxsplit, list)
     end
 
     function str.rsplit(self, sep, maxsplit)
+        return str.split(self.__reversed__(), sep, maxsplit)
+    end
 
+    function str.splitlines(keepends)
+        keepends = keepends or false
+    end
+
+    function str.startswith(self, prefix, start, stop)
+        start = start or 0
+        stop = stop or self.__len__()
+    end
+
+    function str.swapcase(self) end
+
+    function str.title(self)
+
+    end
+
+    function str.translate(self, table)
 
     end
 
