@@ -1,12 +1,15 @@
 local str = {}
 package.loaded[...] = str
-local calc_key = (require "helper_functions")["calc_key"]
+local helper_functions = (require "helper_functions")
+local calc_key = helper_functions.calc_key
+local is_pyobj = helper_functions.is_pyobj
 local class = require "class"
 local pyobj = require "pyobj"
 local range = require "range"
 local staticmethod = require "staticmethod"
 local op_in = require "operator_in"
 local iter_obj_creator = require "iter_obj_creator"
+local pytype = require "type"
 
 local str = class(function(str)
     str.___name = "str"
@@ -15,8 +18,8 @@ local str = class(function(str)
     -- TODO add encoding and errors??
     function str.__init__(self, object, encoding, errors)
         object = object or ""
-        if type(object) == "table" and object.___is_pyobj then
-            if object.___is_pystr then
+        if is_pyobj(object) then
+            if pytype(self) == pytype(object) then
                 self = object
                 return
             end
@@ -33,14 +36,14 @@ local str = class(function(str)
     end
 
     function str.__add__(self, other)
-        if type(other) == "table" and other.___is_pyobj then
+        if is_pyobj(other) then
             return str(self.___d .. other.__str__().___d)
         end
         return str(self.___d .. other)
     end
 
     function str.__mul__(self, n)
-        if type(n) == "table" and n.___is_pyobj then
+        if is_pyobj(n) then
             --TODO
             return str(string.rep(self.___d, n.__int__().___d))
         end
@@ -114,8 +117,8 @@ local str = class(function(str)
 
     --TODO replace with string.find()
     function str.__contains__(self, o)
-        if o.___is_pystr ~= true and type(o) ~= "string" then
-            error("Search element should be pystr or lua str") end
+        if not is_pyobj(o) and type(o) ~= "string" then
+            error("Search element should be pyobj or lua str") end
         o = str(o)
 
         local si = 0
@@ -131,19 +134,19 @@ local str = class(function(str)
 
     function str.__eq__(self, o)
         if type(o) == "string" then return self.__str__() == o end
-        if type(o) == "table" and o.___is_pystr then return self.__str__().___d == o.__str__().___d end
+        if is_pyobj(o) then return self.___d == o.__str__().___d end
         return false
     end
 
     function str.__lt__(self, o)
         if type(o) == "string" then return self.__str__() < o end
-        if type(o) == "table" and o.___is_pystr then return self.__str__().___d < o.__str__().___d end
+        if is_pyobj(o) then return self.___d < o.__str__().___d end
         error("Cannot compare pystring and "..type(o))
     end
 
     function str.__le__(self, o)
         if type(o) == "string" then return self.__str__() <= o end
-        if type(o) == "table" and o.___is_pystr then return self.__str__().___d <= o.__str__().___d end
+        if is_pyobj(o) then return self.___d <= o.__str__().___d end
         error("Cannot compare pystring and "..type(o))
     end
 

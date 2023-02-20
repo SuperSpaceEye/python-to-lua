@@ -5,3 +5,11 @@
 #         item:str = item
 #         for escape, replacement in zip(escape_sequences, replacement_str):
 #             item.replace(escape, replacement)
+
+
+class Test(dict):
+    pass
+
+print(isinstance(dict(), (dict, (str))))
+
+dict()

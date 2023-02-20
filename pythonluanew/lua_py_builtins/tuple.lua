@@ -13,6 +13,8 @@ local tuple = class(function(tuple)
     tuple.___name = "tuple"
     tuple.___left_bracket = "("
     tuple.___right_bracket = ")"
+    tuple.___d = {}
+    tuple.___size = 0
 
     function tuple.__init__(self, obj, straight_copy)
         self.___d = {}

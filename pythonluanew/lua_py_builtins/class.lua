@@ -60,6 +60,7 @@ local function class(class_init, inherited)
     local mt = getmetatable(c) or {}
     mt.__call = function(_, ...)
         local object = {}
+        object.___is_instance = true
 
         setmetatable(object, {
             __index = function(tbl, idx)
