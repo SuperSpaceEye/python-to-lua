@@ -1,4 +1,4 @@
-# Python 3 to CC:Tweaked lua translator
+# Python 3 to lua translator
 
 Python version: 3.5  
 Lua version: 5.2
