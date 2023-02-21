@@ -1,6 +1,8 @@
 General info:
 1) del() doesn't null the object but just calls the __del__, so you must directly item[someidx] = nil. it will also not work for class attributes.
 2) tuple is instance of list, and everything is instance of pyobj
+3) private name mangling doesn't happen.
+4) hash doesn't truncate anything
 
 CC:T info:
 1) mod uses java gc so it doesn't call __gc on cleanup, so it will also not call __del__.
@@ -10,3 +12,11 @@ TODO:
  2) make error handler
  3) make "iterators" as pyobjects
  4) Make unions (and add to isinstance)
+ 5) utf8 support https://github.com/britzl/gooey/blob/master/gooey/internal/utf8.lua
+ 6) make __getattr__... use str()
+ 7) make compiler differentiate structural "(a, b) for i in range()" from tuple
+ 8) add private name mangling (at compile time)
+ 9) collect more variable information (for example to determine if to use tuple({}) or don't)
+
+Maybe:
+1) Just use tuples everywhere???

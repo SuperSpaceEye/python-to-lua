@@ -4,13 +4,12 @@ import os
 import builtins
 
 from .config import Config
-from .nodevisitor import NodeVisitor
-from .prenodevisitor import PreNodeVisitor
+# from .prenodevisitor import PreNodeVisitor
 
 import sys
-sys.path.append("..")
+sys.path.append("")
 sys.path.append("../pythonluanew")
-from pythonluanew.nodevisitor import CNodeVisitor as ND
+from .nodevisitor import CNodeVisitor as ND
 
 class Translator:
     """Python to lua main class translator"""
@@ -72,12 +71,12 @@ class Translator:
         #         visitor.emit("end")
         #         precompiled_parts.append([[function_name, var_list, f"continue_fn{len(precompiled_parts)}"], visitor.output])
         #
-        # visitor = NodeVisitor(config=self.config,
-        #                       continue_nodes=continue_nodes,
-        #                       precompiled_parts=precompiled_parts)
+        visitor = ND()
+                              # continue_nodes=continue_nodes,
+                              # precompiled_parts=precompiled_parts)
         # self.output = []
 
-        visitor = ND()
+        # visitor = NodeVisitor()
 
         visitor.visit(py_ast_tree)
 

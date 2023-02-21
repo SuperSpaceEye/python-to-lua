@@ -454,7 +454,7 @@ str = class(function(str)
     end
 
     function str.replace(self, old, new, count)
-        if count ~= nil then
+        if count == nil then
             return str(self.___d.gsub(old, new))
         else
             return str(self.___d.gsub(old, new, count))

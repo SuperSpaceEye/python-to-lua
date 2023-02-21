@@ -4,9 +4,9 @@ from argparse import ArgumentParser
 from pathlib import Path
 import sys
 
-from pythonlua.config import Config
-from pythonlua.translator import Translator
-
+from pythonluanew.config import Config
+from pythonluanew.translator import Translator
+from pythonluanew.construct import construct
 
 def create_arg_parser():
     """Create and initialize an argument parser object"""
@@ -44,19 +44,21 @@ def main():
         raise RuntimeError(
             "The given filename ('{}') is not a file.".format(input_filename))
 
-    content = None
-    with open(input_filename, "r") as file:
-        content = file.read()
+    # content = None
+    # with open(input_filename, "r") as file:
+    #     content = file.read()
 
-    if not content:
-        raise RuntimeError("The input file is empty.")
+    # if not content:
+    #     raise RuntimeError("The input file is empty.")
 
     translator = Translator(Config(argv.configfilename),
                             show_ast=argv.show_ast)
-    lua_code = translator.translate(content)
 
-    if not argv.only_lua_init and not argv.show_ast:
-        print(lua_code)
+    construct(input_filename, f"lua/{Path(input_filename).name.split('.')[0]}", translator)
+    # lua_code = translator.translate(content)
+
+    # if not argv.only_lua_init and not argv.show_ast:
+    #     print(lua_code)
     return 0
 
 

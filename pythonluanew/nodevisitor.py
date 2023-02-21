@@ -9,6 +9,7 @@ from .cmpopdesc import CompareOperationDesc
 from .nameconstdesc import NameConstantDesc
 from .unaryopdesc import UnaryOperationDesc
 from .loopcounter import LoopCounter
+from .package_indexer import PackageIndexer
 
 from .context import *
 from .config import *
@@ -16,7 +17,9 @@ from .config import *
 # https://stackoverflow.com/questions/30081275/why-is-1000000000000000-in-range1000000000000001-so-fast-in-python-3?rq=1
 # https://stackoverflow.com/questions/8608587/finding-the-source-code-for-built-in-python-functions
 
-class NodeVisitor(ast.NodeVisitor):
+PACKAGES = PackageIndexer()
+
+class CNodeVisitor(ast.NodeVisitor):
     LUACODE = "[[luacode]]"
     def __init__(self, context:Context=None, config:Config=None):
         self.context = context if context is not None else Context()
@@ -32,7 +35,7 @@ class NodeVisitor(ast.NodeVisitor):
         if not inline:
             self.context.var_ctx.push()
 
-        visitor = NodeVisitor(self.context, self.config)
+        visitor = CNodeVisitor(self.context, self.config)
 
         if isinstance(nodes, list):
             for node in nodes:
@@ -54,8 +57,10 @@ class NodeVisitor(ast.NodeVisitor):
         raise RuntimeError(f"Unknown node: {node}")
 
     def visit_Module(self, node: Module):
+        # self.emit([["require(\"pylua_init\")"]])
         self.visit_all(node.body)
-        self.output = self.output[0]
+        self.output:list = self.output[0]
+        self.output.insert(0, "require(\"pylua_init\")\n")
     def visit_FunctionDef(self, node: FunctionDef):
         self.context.var_ctx.push()
 
@@ -122,6 +127,7 @@ class NodeVisitor(ast.NodeVisitor):
         raise NotImplementedError("Async function def")
     def visit_ClassDef(self, node: ClassDef):
         bases = [self.visit_all(base, inline=True) for base in node.bases]
+        bases.append("pyobj")
 
         local_keyword = ""
         last_ctx = self.context.last()
@@ -143,6 +149,8 @@ class NodeVisitor(ast.NodeVisitor):
 
         self.emit("{local}{name} = class(function({node_name})".format(**values))
 
+        self.emit([f"{node.name}.___name=\"{node.name}\""])
+
         self.context.push({"class_name": node.name})
         self.visit_all(node.body)
 
@@ -159,15 +167,34 @@ class NodeVisitor(ast.NodeVisitor):
             self.emit("return {}".format(name))
     def visit_Return(self, node: Return):
         line = "return "
+
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = True
         line += self.visit_all(node.value, inline=True)
+        self.context.pop()
+
         self.emit(line)
     def visit_Delete(self, node: Delete):
         targets = [self.visit_all(target, inline=True) for target in node.targets]
+
         nils = ["nil" for _ in targets]
         line = "{targets} = {nils}".format(targets=", ".join(targets),
                                            nils=", ".join(nils))
         self.emit(line)
     def visit_Assign(self, node: Assign):
+        # print(type(node.targets[0]) == ast.Tuple)
+        left_tuple = False
+        right_tuple = False
+
+        if len(node.targets) == 1 and type(node.targets[0]) == ast.Tuple:
+            left_tuple = True
+        if type(node.value) == ast.Tuple:
+            right_tuple = True
+
+        if right_tuple and not left_tuple:
+            self.context.push(self.context.last())
+            self.context.last()["structural_tuple"] = False
+
         target = self.visit_all(node.targets[0], inline=True)
         value = self.visit_all(node.value, inline=True)
 
@@ -186,6 +213,8 @@ class NodeVisitor(ast.NodeVisitor):
         self.emit("{local}{target} = {value}".format(local=local_keyword,
                                                      target=target,
                                                      value=value))
+        if right_tuple and not left_tuple:
+            self.context.pop()
     def visit_AugAssign(self, node: AugAssign):
         operation = BinaryOperationDesc.OPERATION[node.op.__class__]
 
@@ -204,24 +233,8 @@ class NodeVisitor(ast.NodeVisitor):
 
         self.emit("{target} = {line}".format(target=target, line=line))
     def visit_AnnAssign(self, node: AnnAssign):
-        target = self.visit_all(node.targets[0], inline=True)
-        value = self.visit_all(node.value, inline=True)
-
-        local_keyword = ""
-
-        last_ctx = self.context.last()
-
-        if last_ctx["class_name"]:
-            target = ".".join([last_ctx["class_name"], target])
-
-        # print(self.context.var_ctx.exists(target), target)
-        if "." not in target and not self.context.var_ctx.exists(target):
-            local_keyword = "local "
-            self.context.var_ctx.add(VarItem(target, "var"))
-
-        self.emit("{local}{target} = {value}".format(local=local_keyword,
-                                                     target=target,
-                                                     value=value))
+        if node.target != None and node.value != None:
+            self.visit_Assign(node)
     def visit_For(self, node: For):
         """Visit for loop"""
         line = "for {target} in {iter} do"
@@ -232,10 +245,14 @@ class NodeVisitor(ast.NodeVisitor):
         })
         self.context.var_ctx.push()
 
-        values = {
-            "target": self.visit_all(node.target, inline=True),
-            "iter": self.visit_all(node.iter, inline=True),
-        }
+        values = {}
+        values["target"] = self.visit_all(node.target, inline=True)
+
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+        values["iter"] = self.visit_all(node.iter, inline=True)
+        self.context.pop()
+
         targets = values["target"].split(", ")
         for t in targets:
             self.context.var_ctx.add(VarItem(t, "var"))
@@ -272,7 +289,10 @@ class NodeVisitor(ast.NodeVisitor):
     def visit_AsyncFor(self, node: AsyncFor):
         raise NotImplementedError("Async for")
     def visit_While(self, node: While):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
         test = self.visit_all(node.test, inline=True)
+        self.context.pop()
 
         self.emit("while {} do".format(test))
 
@@ -292,7 +312,10 @@ class NodeVisitor(ast.NodeVisitor):
 
         self.emit("end")
     def visit_If(self, node: If):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
         test = self.visit_all(node.test, inline=True)
+        self.context.pop()
 
         line = "if {} then".format(test)
 
@@ -302,7 +325,11 @@ class NodeVisitor(ast.NodeVisitor):
         if node.orelse:
             if isinstance(node.orelse[0], ast.If):
                 elseif = node.orelse[0]
+
+                self.context.push(self.context.last())
+                self.context.last()["structural_tuple"] = False
                 elseif_test = self.visit_all(elseif.test, inline=True)
+                self.context.pop()
 
                 line = "elseif {} then".format(elseif_test)
                 self.emit(line)
@@ -340,12 +367,33 @@ class NodeVisitor(ast.NodeVisitor):
     def visit_AsyncWith(self, node: AsyncWith):
         raise NotImplementedError("async with")
     def visit_Raise(self, node: Raise):
-        raise NotImplementedError("raise")
+        pass
+        # raise NotImplementedError("raise")
     def visit_Try(self, node: Try):
-        raise NotImplementedError("try except")
+        pass
+        # raise NotImplementedError("try except")
     def visit_Assert(self, node: Assert):
         raise NotImplementedError("assert")
+
+    def recursive_import_create(self, name):
+        from .construct import construct
+        from .translator import Translator
+
+        if not name in PACKAGES.pyfiles.keys():
+            name += ".__init__"
+            if not name in PACKAGES.pyfiles.keys():
+                raise ImportError(f"Package {name} doesn't exist")
+        try:
+            construct(PACKAGES.pyfiles[name], f"lua.{name}", Translator(self.config))
+        except ImportError as err:
+            raise ImportError(f"{err}\nIn package {name}")
+
     def visit_Import(self, node: Import):
+        # print(node.names[0].name in PACKAGES.pyfiles.keys())
+        name = node.names[0].name.rsplit(".", 1)[0]
+        # print(name, node.names[0].name)
+        self.recursive_import_create(name)
+
         line = 'local {asname} = require "{name}"'
         values = {"asname": "", "name": ""}
 
@@ -361,10 +409,33 @@ class NodeVisitor(ast.NodeVisitor):
             values["name"] = node.names[0].name
 
         self.emit(line.format(**values))
+
     def visit_ImportFrom(self, node: ImportFrom):
-        # print("here")
-        # line = f"require {name}"
-        raise NotImplementedError("import from is not implemented")
+        # print(node.names[0].name in PACKAGES.pyfiles.keys())
+        module = node.module
+
+        # print(name, node.names[0].name)
+        self.recursive_import_create(module)
+
+        names = []
+        for name in node.names:
+            names.append(f"{module}.{name.name}")
+
+        line = 'local {asname} = require "{name}"'
+        values = {"asname": "", "name": ""}
+
+        if node.names[0].name == self.config.core_pathname:
+            return
+
+        if node.names[0].asname is None:
+            values["name"] = node.names[0].name
+            values["asname"] = values["name"]
+            values["asname"] = values["asname"].split(".")[-1]
+        else:
+            values["asname"] = node.names[0].asname
+            values["name"] = node.names[0].name
+
+        self.emit(line.format(**values))
 
     def visit_Global(self, node: Global):
         raise NotImplementedError("global")
@@ -397,6 +468,9 @@ class NodeVisitor(ast.NodeVisitor):
         self.emit(line)
     def visit_Slice(self, node: Slice) :pass
     def visit_BoolOp(self, node: BoolOp):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+
         operation = BooleanOperationDesc.OPERATION[node.op.__class__]
         line = "({})".format(operation["format"])
         values = {
@@ -405,8 +479,13 @@ class NodeVisitor(ast.NodeVisitor):
             "operation": operation["value"],
         }
 
+        self.context.pop()
+
         self.emit(line.format(**values))
     def visit_BinOp(self, node: BinOp):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+
         operation = BinaryOperationDesc.OPERATION[node.op.__class__]
         line = "({})".format(operation["format"])
         values = {
@@ -414,13 +493,25 @@ class NodeVisitor(ast.NodeVisitor):
             "right": self.visit_all(node.right, True),
             "operation": operation["value"],
         }
+        self.context.pop()
 
         self.emit(line.format(**values))
     def visit_UnaryOp(self, node: UnaryOp):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+
         operation = UnaryOperationDesc.OPERATION[node.op.__class__]
         value = self.visit_all(node.operand, inline=True)
 
-        line = operation["format"]
+        self.context.pop()
+
+        if node.op.__class__ not in [ast.USub, ast.UAdd]:
+            line = operation["format"]
+        else:
+            if node.operand.__class__ != ast.Constant:
+                line = operation["format"]
+            else:
+                line = "{operation}{value}"
         values = {
             "value": value,
             "operation": operation["value"],
@@ -442,6 +533,7 @@ class NodeVisitor(ast.NodeVisitor):
         self.emit(" ".join(output))
     def visit_IfExp(self, node: IfExp):
         line = "{cond} and {true_cond} or {false_cond}"
+
         values = {
             "cond": self.visit_all(node.test, inline=True),
             "true_cond": self.visit_all(node.body, inline=True),
@@ -462,11 +554,11 @@ class NodeVisitor(ast.NodeVisitor):
 
         elements = ["{} = {}".format(keys[i], values[i]) for i in range(len(keys))]
         elements = ", ".join(elements)
-        self.emit("dict {{{}}}".format(elements))
+        self.emit("dict({{{}}})".format(elements))
     def visit_Set(self, node: Set) :pass
     def visit_ListComp(self, node: ListComp):
         self.emit("(function()")
-        self.emit("local result = list {}")
+        self.emit("local result = list()")
 
         ends_count = 0
 
@@ -495,8 +587,11 @@ class NodeVisitor(ast.NodeVisitor):
         self.emit("end)()")
     def visit_SetComp(self, node: SetComp) :pass
     def visit_DictComp(self, node: DictComp):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+
         self.emit("(function()")
-        self.emit("local result = dict {}")
+        self.emit("local result = dict()")
 
         ends_count = 0
 
@@ -526,6 +621,8 @@ class NodeVisitor(ast.NodeVisitor):
 
         self.emit("return result")
         self.emit("end)()")
+
+        self.context.pop()
     def visit_GeneratorExp(self, node: GeneratorExp) :pass
     def visit_Await(self, node: Await):
         # https://github.com/iamcco/async-await.lua
@@ -536,6 +633,9 @@ class NodeVisitor(ast.NodeVisitor):
     def visit_YieldFrom(self, node: YieldFrom):
         raise NotImplementedError("yield from")
     def visit_Compare(self, node: Compare):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+
         line = ""
 
         left = self.visit_all(node.left, inline=True)
@@ -561,6 +661,8 @@ class NodeVisitor(ast.NodeVisitor):
                 line += " and "
 
         self.emit("({})".format(line))
+
+        self.context.pop()
     def visit_Call(self, node: Call):
         line = "{name}({arguments})"
 
@@ -576,12 +678,12 @@ class NodeVisitor(ast.NodeVisitor):
         t = type(node.value)
 
         if node.value == None:
-            self.emit("nil")
+            self.emit("None")
             return
         if t == str:
             value = node.s
-            if value.startswith(NodeVisitor.LUACODE):
-                value = value[len(NodeVisitor.LUACODE):]
+            if value.startswith(CNodeVisitor.LUACODE):
+                value = value[len(CNodeVisitor.LUACODE):]
                 self.emit(value)
             elif self.context.last()["docstring"]:
                 self.emit(f'--[[ {node.s} ]]')
@@ -589,7 +691,7 @@ class NodeVisitor(ast.NodeVisitor):
                 self.emit(f'"{node.s}"')
             return
 
-        if t == int or t == float:
+        if t == int or t == float or t == bool:
             self.emit(str(node.value))
             return
         if t == complex:
@@ -602,7 +704,13 @@ class NodeVisitor(ast.NodeVisitor):
         # self.emit(str(node.value))
     def visit_NamedExpr(self, node: NamedExpr) :pass
     def visit_Attribute(self, node: Attribute):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+
         obj = self.visit_all(node.value, True)
+
+        self.context.pop()
+
         if obj == self.config.core_prefix:
             line = "{attr}"
             self.emit(line.format(**{"attr": node.attr}))
@@ -615,11 +723,16 @@ class NodeVisitor(ast.NodeVisitor):
         }
         self.emit(line.format(**values))
     def visit_Subscript(self, node: Subscript):
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+
         line = "{name}[{index}]"
         values = {
             "name": self.visit_all(node.value, inline=True),
             "index": self.visit_all(node.slice, inline=True),
         }
+
+        self.context.pop()
 
         self.emit(line.format(**values))
     def visit_Starred(self, node: Starred):
@@ -634,7 +747,10 @@ class NodeVisitor(ast.NodeVisitor):
         self.emit(line)
     def visit_Tuple(self, node: Tuple):
         elements = [self.visit_all(item, inline=True) for item in node.elts]
-        self.emit(", ".join(elements))
+        if self.context.last()["structural_tuple"]:
+            self.emit(", ".join(elements))
+        else:
+            self.emit(f'tuple({{{", ".join(elements)}}})')
     def visit_MatMult(self, node: MatMult):
         raise Exception("Matrix multiplication operator @ is not implemented")
     def visit_ExceptHandler(self, node: ExceptHandler):

@@ -11,11 +11,11 @@ class UnaryOperationDesc:
     OPERATION = {
         ast.USub: {
             "value": "-",
-            "format": _DEFAULT_FORMAT,
+            "format": "{value}.__neg__()",
         },
         ast.UAdd: {
             "value": "+",
-            "format": _DEFAULT_FORMAT,
+            "format": "{value}.__pos__()",
         },
         ast.Not: {
             "value": "not",
