@@ -1,6 +1,9 @@
-local function del(item)
-    if item ~= "table" then return end
-    if not item.___is_pyobj then return end
+function del() end
+require("pylua_init")
+local is_pyobj = helper_functions.is_pyobj
+
+function del(item)
+    if not is_pyobj(item) then return end
     item.__del__()
 end
 

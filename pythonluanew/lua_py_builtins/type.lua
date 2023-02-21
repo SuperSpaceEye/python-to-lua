@@ -1,4 +1,6 @@
-local is_pyobj = (require "helper_functions").is_pyobj
+function pytype() end
+require("pylua_init")
+local is_pyobj = helper_functions.is_pyobj
 
 local lua_types = {table="<lua_table>",
                    string="<lua_string>",
@@ -10,7 +12,7 @@ local lua_types = {table="<lua_table>",
 lua_types["function"] = "<lua_function>"
 lua_types["nil"] = "<lua_nil>"
 
-local function pytype(obj)
+function pytype(obj)
     local str = require "str"
     if not is_pyobj(obj) then return str(lua_types[type(obj)]) end
     return str("<class '"..obj.___name.."'>")

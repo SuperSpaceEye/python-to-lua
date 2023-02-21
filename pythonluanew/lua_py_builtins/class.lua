@@ -26,10 +26,8 @@
 --        end
 --    end
 --}
-local function class(class_init, inherited)  end
-package.loaded[...] = class
 
-local function class(class_init, inherited)
+function class(class_init, inherited)
     inherited = inherited or {}
 
     local c = {}

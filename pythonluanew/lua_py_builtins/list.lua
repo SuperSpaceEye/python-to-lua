@@ -1,21 +1,9 @@
-local list = {}
-package.loaded[...] = list
-local class = require "class"
-local pyobj = require "pyobj"
-local op_in = require "operator_in"
-local str = require "str"
-local del = require "del"
-local None = require "none"
-local zip = require "zip"
-local helper_functions = (require "helper_functions")
-local range = require "range"
-local iter_obj_creator = require "iter_obj_creator"
-local enumerate = require "enumerate"
-
+list = {}
+require("pylua_init")
 local calc_key = helper_functions.py_calc_key
 local is_pyobj = helper_functions.is_pyobj
 
-local list = class(function(list)
+list = class(function(list)
     list.___name = "list"
     list.___d = {}
     list.___size = 0

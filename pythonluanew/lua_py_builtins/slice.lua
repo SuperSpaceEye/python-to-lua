@@ -1,6 +1,7 @@
-local None = require "None"
+function slice() end
+require("pylua_init")
 
-local function slice(start, stop, step)
+function slice(start, stop, step)
     if stop == nil and step == nil then return {0, start, None} end
     stop = stop or None
     step = step or None

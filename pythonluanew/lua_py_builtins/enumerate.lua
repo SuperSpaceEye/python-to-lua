@@ -1,5 +1,8 @@
-local is_pyobj = (require "helper_functions").is_pyobj
-local function enumerate(t, start)
+function enumerate()  end
+require("pylua_init")
+local is_pyobj = helper_functions.is_pyobj
+
+function enumerate(t, start)
     start = start or 0
 
     if t == nil then error("nil object")

@@ -1,4 +1,4 @@
-local function all(iterable)
+function all(iterable)
     for element in iterable do
         if not element then
             return false

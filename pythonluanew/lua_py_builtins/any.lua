@@ -6,3 +6,4 @@ function any(iterable)
     end
     return false
 end
+return any

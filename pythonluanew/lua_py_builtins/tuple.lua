@@ -1,15 +1,7 @@
-local tuple = {}
-package.loaded[...] = tuple
-local list = require "list"
-local class = require "class"
-local helper_functions = (require "helper_functions")
-local is_pyobj = helper_functions.is_pyobj
-local op_in = require "operator_in"
-local enumerate = require "enumerate"
-local range = require "range"
-local str = require "str"
+tuple = {}
+require("pylua_init")
 
-local tuple = class(function(tuple)
+tuple = class(function(tuple)
     tuple.___name = "tuple"
     tuple.___left_bracket = "("
     tuple.___right_bracket = ")"

@@ -1,7 +1,5 @@
- pyobj = {}
- class = class or require "class"
- str = str or require "str"
- None = None or require "none"
+pyobj = {}
+require("pylua_init")
 
 local function t_not_implemented(method, name)
     error("Not implemented: \""..method.."\" method is not implemented for \""..name.."\".")

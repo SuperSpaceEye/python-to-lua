@@ -1,6 +1,7 @@
-local str = require "str"
+function iter_obj_creator() end
+require("pylua_init")
 
-local function iter_obj_creator()
+function iter_obj_creator()
     return {
         ___is_pyobj = true,
         ___name = "iterator",

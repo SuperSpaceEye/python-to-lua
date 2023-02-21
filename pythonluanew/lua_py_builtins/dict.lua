@@ -1,9 +1,6 @@
-local dict = {}
-package.loaded[...] = dict
-
-local pyobj = require "pyobj"
-local class = require "class"
-local is_pyobj = (require "helper_functions").is_pyobj
+dict = {}
+require("pylua_init")
+local is_pyobj = helper_functions.is_pyobj
 
 dict = class(function(dict)
     dict.___name = "dict"

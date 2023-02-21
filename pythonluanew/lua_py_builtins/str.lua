@@ -1,18 +1,10 @@
-local str = {}
-package.loaded[...] = str
-local helper_functions = (require "helper_functions")
-local calc_key = helper_functions.calc_key
+str = {}
+require("pylua_init")
 local is_pyobj = helper_functions.is_pyobj
+local calc_key = helper_functions.calc_key
 local is_whitespace = helper_functions.is_whitespace
-local class = require "class"
-local pyobj = require "pyobj"
-local range = require "range"
-local staticmethod = require "staticmethod"
-local op_in = require "operator_in"
-local iter_obj_creator = require "iter_obj_creator"
-local pytype = require "type"
 
-local str = class(function(str)
+str = class(function(str)
     str.___name = "str"
     str.___d = ""
 

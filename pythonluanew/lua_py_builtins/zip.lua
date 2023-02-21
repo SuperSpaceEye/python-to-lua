@@ -1,7 +1,9 @@
-local is_pyobj = (require "helper_functions")["is_pyobj"]
+function zip()  end
+require("pylua_init")
+local is_pyobj = helper_functions.is_pyobj
 
 --TODO add error handling instead of nil checking
-local function zip(iter1, iter2)
+function zip(iter1, iter2)
     if is_pyobj(iter1) and is_pyobj(iter2) then
         iter1 = iter1.__iter__()
         iter2 = iter2.__iter__()

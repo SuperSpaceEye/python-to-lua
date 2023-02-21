@@ -1,10 +1,5 @@
-local range = {}
-package.loaded[...] = range
-local pyobj = require "pyobj"
-local str = require "str"
-local pytype = require "type"
-local iter_obj_creator = require "iter_obj_creator"
-local class = require "class"
+range = {}
+require("pylua_init")
 
 range = class(function(range)
     range.___name = "range"

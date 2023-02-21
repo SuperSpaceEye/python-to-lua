@@ -1,8 +1,5 @@
-local None = {}
-package.loaded[...] = None
-local class = require "class"
-local pyobj = require "pyobj"
-local str = require "str"
+None = {}
+require("pylua_init")
 
 None = class(function(None)
     None.___name = "NoneType"

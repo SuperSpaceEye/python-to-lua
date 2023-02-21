@@ -1,10 +1,8 @@
-local str = require "str"
-local is_pyobj = require ("helper_functions").is_pyobj
-local pytype = require "type"
-local tuple = require "tuple"
-local op_in = require "operator_in"
+function isinstance()  end
+require("pylua_init")
+local is_pyobj = helper_functions.is_pyobj
 
-local function isinstance(obj, items, no_instance_check)
+function isinstance(obj, items, no_instance_check)
     no_instance_check = no_instance_check or false
 
     -- base condition for recursive check

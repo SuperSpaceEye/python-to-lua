@@ -1,3 +1,6 @@
+function op_in()  end
+require("pylua_init")
+
 local function range_in(iter)
     local iter = iter.__iter__()
     return function()
@@ -5,7 +8,7 @@ local function range_in(iter)
     end
 end
 
-local function op_in(item, items)
+function op_in(item, items)
     if items == nil then
         return range_in(item)
     else
