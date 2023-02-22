@@ -1,5 +1,4 @@
 tuple = {}
---require("pylua_init")
 class = class or require("class")
 list = list or require("list")
 

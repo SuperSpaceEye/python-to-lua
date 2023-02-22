@@ -1,6 +1,3 @@
---function iter_obj_creator() end
---require("pylua_init")
-
 function iter_obj_creator()
     return {
         ___is_pyobj = true,

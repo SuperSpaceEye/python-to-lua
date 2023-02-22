@@ -1,6 +1,4 @@
 frozenset = {}
---require("pylua_init")
-
 class = class or require("class")
 pyobj = pyobj or require("pyobj")
 

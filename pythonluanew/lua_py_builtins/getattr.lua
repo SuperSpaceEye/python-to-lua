@@ -1,6 +1,3 @@
---function getattr()  end
---require("pylua_init")
-
 function getattr(object, name, default)
     if not is_pyobj(object) then error("obj is not pyobject") end
     if pytype(name) ~= pytype(str) and type(name) ~= "string" then error("name should be either a lua str or pystr") end

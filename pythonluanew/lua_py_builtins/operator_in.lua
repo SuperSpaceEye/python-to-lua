@@ -1,6 +1,3 @@
---function op_in()  end
---require("pylua_init")
-
 local function range_in(iter)
     local iter = iter.__iter__()
     return function()

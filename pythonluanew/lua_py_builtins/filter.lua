@@ -1,6 +1,3 @@
---function filter()  end
---require("pylua_init")
-
 --TODO
 function filter(func, iterable)
     if not is_pyobj(iterable) then error("filter can only be used with pyobj") end

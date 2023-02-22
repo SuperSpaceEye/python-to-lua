@@ -1,5 +1,4 @@
-function enumerate()  end
---require("pylua_init")
+function enumerate(t, start)  end
 helper_functions = helper_functions or require("helper_functions")
 local is_pyobj = helper_functions.is_pyobj
 

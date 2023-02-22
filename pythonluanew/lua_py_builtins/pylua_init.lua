@@ -1,8 +1,4 @@
 --https://docs.python.org/3/library/functions.html#abs
-i = i or 1
-print("here "..i)
-i = i + 1
-
 
 zip = zip or require("zip")
 pytype = pytype or require("type")
