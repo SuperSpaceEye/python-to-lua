@@ -40,7 +40,8 @@ def main():
     translator = Translator(Config(argv.configfilename,
                                    argv.no_jumps,
                                    break_in_do=argv.break_in_do,
-                                   minify_lua=argv.minify_lua))
+                                   minify_lua=argv.minify_lua,
+                                   ))
 
     construct(input_filename, f"lua/{Path(input_filename).name.split('.')[0]}", translator, argv.minify_lua)
     return 0

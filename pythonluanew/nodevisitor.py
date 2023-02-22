@@ -10,6 +10,7 @@ from .nameconstdesc import NameConstantDesc
 from .unaryopdesc import UnaryOperationDesc
 from .loopcounter import LoopCounter
 from .package_indexer import PackageIndexer
+from .metadata_tracker import GlobalMetadataTracker, MetaFunction, ReturnSignature
 
 from .context import *
 from .config import *
@@ -18,6 +19,7 @@ from .config import *
 # https://stackoverflow.com/questions/8608587/finding-the-source-code-for-built-in-python-functions
 
 PACKAGES = PackageIndexer()
+METADATA = GlobalMetadataTracker()
 
 class CNodeVisitor(ast.NodeVisitor):
     LUACODE = "[[luacode]]"
@@ -57,7 +59,8 @@ class CNodeVisitor(ast.NodeVisitor):
         raise RuntimeError(f"Unknown node: {node}")
 
     def visit_Module(self, node: Module):
-        # self.emit([["require(\"pylua_init\")"]])
+        self.context.last()["metaitem_name"] = self.config.src_filename+""
+
         self.visit_all(node.body)
         self.output:list = self.output[0]
         self.output.insert(0, "package.path = \"./pylua/?.lua;\"..package.path\nrequire(\"pylua_init\")\n")
@@ -90,7 +93,9 @@ class CNodeVisitor(ast.NodeVisitor):
 
         self.emit(function_def)
 
-        self.context.push({"class_name": ""})
+        last_parent = last_ctx["metaitem_name"]
+        self.context.push({"class_name": "", "metaitem_name":f"{last_ctx['metaitem_name']}.{name}"})
+        METADATA.data[self.context.last()["metaitem_name"]] = MetaFunction(name, last_parent, [])
 
         self.visit_all(node.body)
 
@@ -166,6 +171,8 @@ class CNodeVisitor(ast.NodeVisitor):
         if self.config["class"]["return_at_the_end"] and not last_ctx["class_name"]:
             self.emit("return {}".format(name))
     def visit_Return(self, node: Return):
+        self.record_return_metadata(node)
+
         line = "return "
 
         self.context.push(self.context.last())
@@ -174,6 +181,21 @@ class CNodeVisitor(ast.NodeVisitor):
         self.context.pop()
 
         self.emit(line)
+
+    def record_return_metadata(self, node):
+        item = METADATA.data[self.context.last()["metaitem_name"]]
+        if type(node.value) == ast.Tuple:
+            for it in item.returns:
+                if it.num_returned == len(node.value.elts):
+                    return
+            item.returns.append(ReturnSignature(len(node.value.elts)))
+        else:
+            for it in item.returns:
+                if it.num_returned == 1:
+                    return
+            item.returns.append(ReturnSignature(1))
+        pass
+
     def visit_Delete(self, node: Delete):
         targets = [self.visit_all(target, inline=True) for target in node.targets]
 
@@ -237,7 +259,7 @@ class CNodeVisitor(ast.NodeVisitor):
             self.visit_Assign(node)
     def visit_For(self, node: For):
         use_python_iter = self.analyse_FOR_use_python_iter(node)
-        has_value_unpacking = self.analyse_FOR_for_value_unpacking(node)
+        has_value_unpacking = self.analyse_FOR_for_iterable_unpacking(node)
 
         line_right = ""
 
@@ -301,13 +323,19 @@ class CNodeVisitor(ast.NodeVisitor):
         if hasattr(node.iter, "func") and node.iter.func.id == "range":
             return False
         return True
-    def analyse_FOR_for_value_unpacking(self, node):
+    def analyse_FOR_for_iterable_unpacking(self, node):
+        allowed_builtin = ["zip", "enumerate"]
+
+        # TODO custom functions
         if type(node.target) == ast.Tuple:
+            # zip will return proper iterator
+            if hasattr(node.iter, "func") and node.iter.func.id in allowed_builtin:
+                return False
             return True
         return False
 
     def make_FOR_value_unpacking(self, node, line):
-        return f" in sequence_unpacker({line})"
+        return f" in iterable_unpacker({line})"
     def make_FOR_python_iter(self, node):
         line_right = "op_in({iter})"
         self.context.push(self.context.last())
@@ -792,7 +820,7 @@ class CNodeVisitor(ast.NodeVisitor):
         self.emit(line.format(**values))
     def visit_Starred(self, node: Starred):
         value = self.visit_all(node.value, inline=True)
-        line = "unpack({})".format(value)
+        line = "iterable_unpacker({})".format(value)
         self.emit(line)
     def visit_Name(self, node: Name):
         self.emit(node.id)

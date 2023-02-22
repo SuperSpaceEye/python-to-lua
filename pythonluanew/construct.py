@@ -8,6 +8,7 @@ def make_relative(dot_path:str):
 
 def construct(source_path, output_path, translator, minify=False):
     with open(source_path, mode="r") as file: py_code = file.read()
+    translator.config.src_filename=Path(source_path).name.split(".")[0]
     lua_code = translator.translate(py_code)
     if minify:
         import js2py

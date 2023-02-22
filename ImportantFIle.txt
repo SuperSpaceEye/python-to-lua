@@ -17,6 +17,7 @@ TODO:
  7) make compiler differentiate structural "(a, b) for i in range()" from tuple
  8) add private name mangling (at compile time)
  9) collect more variable information (for example to determine if to use tuple({}) or don't)
+ 10) add proper handling of https://stackabuse.com/unpacking-in-python-beyond-parallel-assignment/
 
 Maybe:
 1) Just use tuples everywhere???

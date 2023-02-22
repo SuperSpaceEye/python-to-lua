@@ -67,7 +67,7 @@ class Translator:
         #         visitor.emit("end")
         #         precompiled_parts.append([[function_name, var_list, f"continue_fn{len(precompiled_parts)}"], visitor.output])
         #
-        visitor = ND()
+        visitor = ND(config=self.config)
                               # continue_nodes=continue_nodes,
                               # precompiled_parts=precompiled_parts)
         # self.output = []

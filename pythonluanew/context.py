@@ -10,6 +10,7 @@ class Context:
                 "loop_label_name": "",
                 "docstring": False,
                 "structural_tuple":True,
+                "metaitem_name":""
             }
 
             self.ctx_stack = [values]
