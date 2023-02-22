@@ -294,7 +294,7 @@ str = class(function(str)
         for i in op_in(range(self.__len__())) do
             local char = self[i].___d
 
-            if ~((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
+            if not ((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
                 return false
             end
         end
@@ -308,7 +308,7 @@ str = class(function(str)
         for i in op_in(range(self.__len__())) do
             local char = self[i].___d
 
-            if ~(char >= "0" and char <= "9") then
+            if not (char >= "0" and char <= "9") then
                 return false
             end
         end
@@ -343,7 +343,7 @@ str = class(function(str)
 
         for i in op_in(range(self.__len__())) do
             local ch = self[i].___d
-            if ~(ch >= "\0" and ch <= " ") then
+            if not (ch >= "\0" and ch <= " ") then
                 return false
             end
         end

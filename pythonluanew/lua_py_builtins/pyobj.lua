@@ -86,9 +86,9 @@ pyobj = class(function(pyObject)
     --function pyObject.__lt__(self, other) t_not_implemented("__lt__", self.___name) end
     --function pyObject.__le__(self, other) t_not_implemented("__le__", self.___name) end
     --function pyObject.__eq__(self, other) t_not_implemented("__eq__", self.___name) end
-    function pyObject.__ne__(self, other) return ~self.__eq__(other) end
-    function pyObject.__gt__(self, other) return ~self.__lt__(other) end
-    function pyObject.__ge__(self, other) return ~self.__lt__(other) or self.__eq__(other) end
+    function pyObject.__ne__(self, other) return not self.__eq__(other) end
+    function pyObject.__gt__(self, other) return not self.__lt__(other) end
+    function pyObject.__ge__(self, other) return not self.__lt__(other) or self.__eq__(other) end
 
     --function pyObject.__next__(self) t_not_implemented("__next__", self.___name) end
     --function pyObject.__anext__(self) t_not_implemented("__anext__", self.___name) end
