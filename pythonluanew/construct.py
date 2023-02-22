@@ -13,7 +13,7 @@ def construct(source_path, output_path, translator, minify=False):
         import js2py
         context = js2py.EvalJs(enable_require=True)
 
-        with open("luamin/luamin.js", mode="r") as file:
+        with open("luamin_/luamin.js", mode="r") as file:
             jscript = file.read()
 
         context.execute(jscript)
