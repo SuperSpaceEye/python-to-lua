@@ -48,5 +48,6 @@ hash = hash or require("hash")
 help = help or require("help")
 hex = hex or require("hex")
 id = id or require("id")
+sequence_unpacker = sequence_unpacker or require("sequence_unpacker")
 
 is_pyobj = is_pyobj or helper_functions.is_pyobj

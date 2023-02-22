@@ -236,7 +236,20 @@ class CNodeVisitor(ast.NodeVisitor):
         if node.target != None and node.value != None:
             self.visit_Assign(node)
     def visit_For(self, node: For):
-        line_right = self.analyse_for_header(node)
+        use_python_iter = self.analyse_FOR_use_python_iter(node)
+        has_value_unpacking = self.analyse_FOR_for_value_unpacking(node)
+
+        line_right = ""
+
+        if use_python_iter:
+            line_right = self.make_FOR_python_iter(node)
+            if has_value_unpacking:
+                line_right = self.make_FOR_value_unpacking(node, line_right)
+            else:
+                line_right = " in " + line_right
+        else:
+            line_right = self.make_FOR_lua_iter(node)
+
 
         continue_label = LoopCounter.get_next()
         self.context.push({
@@ -252,9 +265,9 @@ class CNodeVisitor(ast.NodeVisitor):
 
         line_left = "for {target}".format(target=target)
 
-        line = line_left + line_right
+        line_right = line_left + line_right + " do"
 
-        self.emit(line)
+        self.emit(line_right)
 
         # if self.config.no_jumps and node in self.config.continue_nodes:
         #     idx = self.continue_nodes.index(node)
@@ -284,36 +297,44 @@ class CNodeVisitor(ast.NodeVisitor):
 
         self.emit("end")
 
-    def analyse_for_header(self, node):
+    def analyse_FOR_use_python_iter(self, node):
         if hasattr(node.iter, "func") and node.iter.func.id == "range":
-            line_right = "={start},{stop},{step} do"
+            return False
+        return True
+    def analyse_FOR_for_value_unpacking(self, node):
+        if type(node.target) == ast.Tuple:
+            return True
+        return False
 
-            range_args = node.iter.args
-            if len(range_args) == 1:
-                start = "0"
-                stop = self.visit_all(range_args[0], inline=True)
-                step = "1"
-            elif len(range_args) == 2:
-                start = self.visit_all(range_args[0], inline=True)
-                stop = self.visit_all(range_args[1], inline=True)
-                step = "1"
-            elif len(range_args) == 3:
-                start = self.visit_all(range_args[0], inline=True)
-                stop = self.visit_all(range_args[1], inline=True)
-                step = self.visit_all(range_args[2], inline=True)
-            else:
-                raise Exception("Empty range body")
+    def make_FOR_value_unpacking(self, node, line):
+        return f" in sequence_unpacker({line})"
+    def make_FOR_python_iter(self, node):
+        line_right = "op_in({iter})"
+        self.context.push(self.context.last())
+        self.context.last()["structural_tuple"] = False
+        iter_ = self.visit_all(node.iter, inline=True)
+        self.context.pop()
+        line_right = line_right.format(iter=iter_)
+        return line_right
 
-            line_right = line_right.format(start=start, stop=stop, step=step)
+    def make_FOR_lua_iter(self, node):
+        line_right = "={start},{stop},{step}"
+        range_args = node.iter.args
+        if len(range_args) == 1:
+            start = "0"
+            stop = self.visit_all(range_args[0], inline=True)
+            step = "1"
+        elif len(range_args) == 2:
+            start = self.visit_all(range_args[0], inline=True)
+            stop = self.visit_all(range_args[1], inline=True)
+            step = "1"
+        elif len(range_args) == 3:
+            start = self.visit_all(range_args[0], inline=True)
+            stop = self.visit_all(range_args[1], inline=True)
+            step = self.visit_all(range_args[2], inline=True)
         else:
-            line_right = " in op_in({iter}) do"
-
-            self.context.push(self.context.last())
-            self.context.last()["structural_tuple"] = False
-            iter_ = self.visit_all(node.iter, inline=True)
-            self.context.pop()
-
-            line_right = line_right.format(iter=iter_)
+            raise Exception("Empty range body")
+        line_right = line_right.format(start=start, stop=stop, step=step)
         return line_right
 
     def visit_AsyncFor(self, node: AsyncFor):
@@ -601,6 +622,7 @@ class CNodeVisitor(ast.NodeVisitor):
                 "target": self.visit_all(comp.target, inline=True),
                 "iterator": self.visit_all(comp.iter, inline=True),
             }
+
             line = line.format(**values)
             self.emit(line)
             ends_count += 1
