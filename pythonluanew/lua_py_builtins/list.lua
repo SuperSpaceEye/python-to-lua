@@ -33,7 +33,7 @@ list = class(function(list)
                 self.___d[i] = obj[i]
                 i = i + 1
             end
-            self.___size = i
+            self.___size = i-1
         end
     end
 

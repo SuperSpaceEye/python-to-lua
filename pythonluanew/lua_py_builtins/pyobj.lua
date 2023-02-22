@@ -47,7 +47,7 @@ pyobj = class(function(pyObject)
     --function pyObject.__dir__(self) t_not_implemented("__dir__", self.___name) end
     --function pyObject.__sizeof__(self) t_not_implemented("__sizeof__", self.___name) end
 
-    --function pyObject.__getattr__(self, name) error("AttributeError: '"..self.___name.."' object has no attribute '"..name.."'.") end
+    function pyObject.__getattr__(self, name) error("AttributeError: '"..self.___name.."' object has no attribute '"..name.."'.") end
     function pyObject.__setattr__(self, name, value) rawset(self, name, value) end
     --function pyObject.__delattr__(self, name) t_not_implemented("__delattr__", self.___name) end
 

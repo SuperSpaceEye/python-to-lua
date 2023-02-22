@@ -60,7 +60,7 @@ class CNodeVisitor(ast.NodeVisitor):
         # self.emit([["require(\"pylua_init\")"]])
         self.visit_all(node.body)
         self.output:list = self.output[0]
-        self.output.insert(0, "require(\"pylua_init\")\n")
+        self.output.insert(0, "package.path = \"./pylua/?.lua;\"..package.path\nrequire(\"pylua_init\")\n")
     def visit_FunctionDef(self, node: FunctionDef):
         self.context.var_ctx.push()
 
@@ -100,7 +100,7 @@ class CNodeVisitor(ast.NodeVisitor):
         body = self.output[-1]
 
         if node.args.vararg is not None:
-            line = f"local {node.args.vararg.arg} = list {{{{...}}}}"
+            line = f"local {node.args.vararg.arg} = list({{...}})"
             body.insert(0, line)
 
         arg_index = -1
@@ -236,8 +236,7 @@ class CNodeVisitor(ast.NodeVisitor):
         if node.target != None and node.value != None:
             self.visit_Assign(node)
     def visit_For(self, node: For):
-        """Visit for loop"""
-        line = "for {target} in {iter} do"
+        line_right = self.analyse_for_header(node)
 
         continue_label = LoopCounter.get_next()
         self.context.push({
@@ -245,19 +244,17 @@ class CNodeVisitor(ast.NodeVisitor):
         })
         self.context.var_ctx.push()
 
-        values = {}
-        values["target"] = self.visit_all(node.target, inline=True)
+        target = self.visit_all(node.target, inline=True)
 
-        self.context.push(self.context.last())
-        self.context.last()["structural_tuple"] = False
-        values["iter"] = self.visit_all(node.iter, inline=True)
-        self.context.pop()
-
-        targets = values["target"].split(", ")
+        targets = target.split(", ")
         for t in targets:
             self.context.var_ctx.add(VarItem(t, "var"))
 
-        self.emit(line.format(**values))
+        line_left = "for {target}".format(target=target)
+
+        line = line_left + line_right
+
+        self.emit(line)
 
         # if self.config.no_jumps and node in self.config.continue_nodes:
         #     idx = self.continue_nodes.index(node)
@@ -286,6 +283,39 @@ class CNodeVisitor(ast.NodeVisitor):
             self.output[-1].append("::{}::".format(continue_label))
 
         self.emit("end")
+
+    def analyse_for_header(self, node):
+        if node.iter.func.id == "range":
+            line_right = "={start},{stop},{step} do"
+
+            range_args = node.iter.args
+            if len(range_args) == 1:
+                start = "0"
+                stop = self.visit_all(range_args[0], inline=True)
+                step = "1"
+            elif len(range_args) == 2:
+                start = self.visit_all(range_args[0], inline=True)
+                stop = self.visit_all(range_args[1], inline=True)
+                step = "1"
+            elif len(range_args) == 3:
+                start = self.visit_all(range_args[0], inline=True)
+                stop = self.visit_all(range_args[1], inline=True)
+                step = self.visit_all(range_args[2], inline=True)
+            else:
+                raise Exception("Empty range body")
+
+            line_right = line_right.format(start=start, stop=stop, step=step)
+        else:
+            line_right = "in op_in({iter}) do"
+
+            self.context.push(self.context.last())
+            self.context.last()["structural_tuple"] = False
+            iter_ = self.visit_all(node.iter, inline=True)
+            self.context.pop()
+
+            line_right = line_right.format(iter=iter_)
+        return line_right
+
     def visit_AsyncFor(self, node: AsyncFor):
         raise NotImplementedError("Async for")
     def visit_While(self, node: While):
@@ -692,7 +722,7 @@ class CNodeVisitor(ast.NodeVisitor):
             return
 
         if t == int or t == float or t == bool:
-            self.emit(str(node.value))
+            self.emit(str(node.value).lower())
             return
         if t == complex:
             # https://github.com/davidm/lua-matrix/blob/master/lua/complex.lua
@@ -743,7 +773,7 @@ class CNodeVisitor(ast.NodeVisitor):
         self.emit(node.id)
     def visit_List(self, node: List):
         elements = [self.visit_all(item, inline=True) for item in node.elts]
-        line = "list {{{}}}".format(", ".join(elements))
+        line = "list({{{}}})".format(", ".join(elements))
         self.emit(line)
     def visit_Tuple(self, node: Tuple):
         elements = [self.visit_all(item, inline=True) for item in node.elts]
