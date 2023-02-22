@@ -1,5 +1,8 @@
 complex = {}
-require("pylua_init")
+--require("pylua_init")
+
+class = class or require("class")
+pyobj = pyobj or require("pyobj")
 
 complex = class(function(complex)
     complex.___name = "complex"

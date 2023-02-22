@@ -1,4 +1,4 @@
-from luatypes import *
+from .luatypes import *
 def sleep(time:number):
     """
     Pauses execution for the specified number of seconds.

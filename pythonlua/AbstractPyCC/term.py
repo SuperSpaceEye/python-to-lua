@@ -1,4 +1,4 @@
-from luatypes import *
+from .luatypes import *
 
 class Redirect:
   def write(self, text:string)->None:

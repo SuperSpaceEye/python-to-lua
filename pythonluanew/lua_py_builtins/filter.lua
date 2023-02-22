@@ -1,5 +1,5 @@
-function filter()  end
-require("pylua_init")
+--function filter()  end
+--require("pylua_init")
 
 --TODO
 function filter(func, iterable)

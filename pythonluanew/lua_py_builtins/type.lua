@@ -1,6 +1,6 @@
-function pytype() end
-require("pylua_init")
-local is_pyobj = helper_functions.is_pyobj
+--function pytype() end
+--require("pylua_init")
+--local is_pyobj = helper_functions.is_pyobj
 
 local lua_types = {table="<lua_table>",
                    string="<lua_string>",

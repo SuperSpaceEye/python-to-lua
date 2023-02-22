@@ -1,5 +1,5 @@
-function any() end
-require("pylua_init")
+--function any() end
+--require("pylua_init")
 
 function any(iterable)
     for element in op_in(iterable) do

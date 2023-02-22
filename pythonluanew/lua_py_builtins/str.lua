@@ -1,5 +1,9 @@
 str = {}
-require("pylua_init")
+--require("pylua_init")
+helper_functions = helper_functions or require("helper_functions")
+class = class or require("class")
+pyobj = pyobj or require("pyobj")
+staticmethod = staticmethod or require("staticmethod")
 local is_pyobj = helper_functions.is_pyobj
 local calc_key = helper_functions.calc_key
 local is_whitespace = helper_functions.is_whitespace

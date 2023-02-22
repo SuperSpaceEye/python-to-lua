@@ -1,5 +1,5 @@
-function delattr()  end
-require("pylua_init")
+--function delattr()  end
+--require("pylua_init")
 
 function delattr(obj, name)
     if not is_pyobj(obj) then error("obj is not pyobject") end

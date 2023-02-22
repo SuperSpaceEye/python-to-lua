@@ -1,5 +1,5 @@
-function chr()  end
-require("pylua_init")
+--function chr()  end
+--require("pylua_init")
 
 function chr(i)
     if is_pyobj(i) then

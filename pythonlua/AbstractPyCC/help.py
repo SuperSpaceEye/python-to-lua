@@ -1,4 +1,4 @@
-from luatypes import *
+from .luatypes import *
 
 class help:
   @staticmethod

@@ -1,4 +1,4 @@
-from luatypes import *
+from .luatypes import *
 
 class gps:
     #The channel which GPS requests and responses are broadcast on.

@@ -1,5 +1,5 @@
-function op_in()  end
-require("pylua_init")
+--function op_in()  end
+--require("pylua_init")
 
 local function range_in(iter)
     local iter = iter.__iter__()

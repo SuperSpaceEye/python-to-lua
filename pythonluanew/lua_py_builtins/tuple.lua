@@ -1,5 +1,7 @@
 tuple = {}
-require("pylua_init")
+--require("pylua_init")
+class = class or require("class")
+list = list or require("list")
 
 tuple = class(function(tuple)
     tuple.___name = "tuple"

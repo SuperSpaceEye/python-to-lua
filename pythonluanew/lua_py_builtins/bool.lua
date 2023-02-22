@@ -1,5 +1,8 @@
-function bool() end
-require("pylua_init")
+--function bool() end
+--require("pylua_init")
+
+helper_functions = helper_functions or require("helper_functions")
+local is_pyobj = helper_functions.is_pyobj
 
 function bool(x)
     if x == false or x == nil or x == 0 or x == None then

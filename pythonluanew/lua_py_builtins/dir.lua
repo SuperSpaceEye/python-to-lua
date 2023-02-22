@@ -1,5 +1,5 @@
-dir = function()  end
-require("pylua_init")
+--dir = function()  end
+--require("pylua_init")
 
 --TODO complete dir
 function dir(obj)

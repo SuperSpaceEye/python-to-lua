@@ -1,5 +1,8 @@
 frozenset = {}
-require("pylua_init")
+--require("pylua_init")
+
+class = class or require("class")
+pyobj = pyobj or require("pyobj")
 
 frozenset = class(function(frozenset)
     frozenset.___name = "frozenset"

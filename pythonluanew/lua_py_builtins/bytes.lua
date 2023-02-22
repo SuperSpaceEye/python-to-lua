@@ -1,5 +1,8 @@
 bytes = {}
-require("pylua_init")
+--require("pylua_init")
+
+class = class or require("class")
+pyobj = pyobj or require("pyobj")
 
 bytes = class(function(bytes)
     bytes.___name = "bytearray"

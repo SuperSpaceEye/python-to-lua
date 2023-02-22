@@ -1,5 +1,5 @@
-function hasattr()  end
-require("pylua_init")
+--function hasattr()  end
+--require("pylua_init")
 
 -- TODO
 function hasattr(object, name)

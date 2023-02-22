@@ -1,5 +1,7 @@
 pyobj = {}
-require("pylua_init")
+--require("pylua_init")
+
+class = class or require("class")
 
 local function t_not_implemented(method, name)
     error("Not implemented: \""..method.."\" method is not implemented for \""..name.."\".")

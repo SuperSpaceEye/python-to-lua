@@ -1,5 +1,8 @@
 None = {}
-require("pylua_init")
+--require("pylua_init")
+helper_functions = helper_functions or require("helper_functions")
+class = class or require("class")
+pyobj = pyobj or require("pyobj")
 local is_pyobj = helper_functions.is_pyobj
 
 None = class(function(None)

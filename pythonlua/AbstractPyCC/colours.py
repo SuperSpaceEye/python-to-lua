@@ -1,4 +1,4 @@
-from luatypes import *
+from .luatypes import *
 class colours:
     white=1
     orange=2

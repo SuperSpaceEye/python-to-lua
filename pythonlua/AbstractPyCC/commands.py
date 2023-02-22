@@ -1,4 +1,4 @@
-from luatypes import *
+from .luatypes import *
 class commands:
     @staticmethod
     def exec(command:string)->List[boolean, List[string], number|None]:

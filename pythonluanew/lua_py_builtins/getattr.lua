@@ -1,5 +1,5 @@
-function getattr()  end
-require("pylua_init")
+--function getattr()  end
+--require("pylua_init")
 
 function getattr(object, name, default)
     if not is_pyobj(object) then error("obj is not pyobject") end

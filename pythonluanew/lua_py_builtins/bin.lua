@@ -1,5 +1,8 @@
-function bin()  end
-require("pylua_init")
+--function bin()  end
+--require("pylua_init")
+
+helper_functions = helper_functions or require("helper_functions")
+local is_pyobj = helper_functions.is_pyobj
 
 local function toBits(num,bits)
     -- returns a table of bits, most significant first.

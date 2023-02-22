@@ -1,4 +1,4 @@
-from luatypes import *
+from .luatypes import *
 
 class Websocket:
   def receive(self, timeout:number=None)->List[string, boolean]|None:

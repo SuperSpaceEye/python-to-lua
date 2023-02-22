@@ -1,5 +1,5 @@
-from luatypes import *
-from term import *
+from .luatypes import *
+from .term import *
 
 class Window:
   def write(self, sText)->None:

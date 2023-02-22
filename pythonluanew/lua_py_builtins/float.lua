@@ -1,5 +1,8 @@
 float = {}
-require("pylua_init")
+--require("pylua_init")
+
+class = class or require("class")
+pyobj = pyobj or require("pyobj")
 
 float = class(function(float)
     float.___name = "float"
