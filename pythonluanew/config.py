@@ -8,7 +8,9 @@ class Config:
                  filename=None,
                  no_jumps=True,
                  core_pathname="pythonlua.AbstractPyCC.CCT",
-                 core_prefix="cc"):
+                 core_prefix="cc",
+                 break_in_do=True,
+                 minify_lua=True):
         self.data = {
             "class": {
                 "return_at_the_end": False,
@@ -17,6 +19,8 @@ class Config:
         self.no_jumps = no_jumps
         self.core_pathname = core_pathname
         self.core_prefix = core_prefix
+        self.break_in_do = break_in_do
+        self.minify_lua = minify_lua
 
         if filename is not None:
             self.load(filename)

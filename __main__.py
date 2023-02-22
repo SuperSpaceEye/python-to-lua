@@ -17,13 +17,12 @@ def create_arg_parser():
     parser.add_argument("configfilename", metavar="CONFIG", type=str,
                         help="Translator configuration file in yaml format.",
                         nargs="?", default=".pyluaconf.yaml")
-
-    parser.add_argument("--show-ast", help="Print python ast tree before code.",
-                        dest="show_ast", action="store_true")
-    parser.add_argument("--only-lua-init", help="Print only lua initialization code.",
-                        dest="only_lua_init", action="store_true")
-    parser.add_argument("--no-lua-init", help="Print lua code without lua init code.",
-                        dest="no_lua_init", action="store_true")
+    parser.add_argument("--minify-lua", help="Minify lua code.",
+                        dest="minify_lua", action="store_true")
+    parser.add_argument("--no-jumps", help="Compiler will not use goto labels during compilation",
+                        dest="no_jumps", action="store_true")
+    parser.add_argument("--break-in-do", help="Compiler will wrap break statements in \"do end\"",
+                        dest="break_in_do", action="store_true")
 
     return parser
 
@@ -33,32 +32,17 @@ def main():
     parser = create_arg_parser()
     argv = parser.parse_args()
 
-    if not argv.no_lua_init and not argv.show_ast:
-        print(Translator.get_luainit())
-
-    if argv.only_lua_init:
-        return 0
-
     input_filename = argv.inputfilename
     if not Path(input_filename).is_file():
         raise RuntimeError(
             "The given filename ('{}') is not a file.".format(input_filename))
 
-    # content = None
-    # with open(input_filename, "r") as file:
-    #     content = file.read()
+    translator = Translator(Config(argv.configfilename,
+                                   argv.no_jumps,
+                                   break_in_do=argv.break_in_do,
+                                   minify_lua=argv.minify_lua))
 
-    # if not content:
-    #     raise RuntimeError("The input file is empty.")
-
-    translator = Translator(Config(argv.configfilename),
-                            show_ast=argv.show_ast)
-
-    construct(input_filename, f"lua/{Path(input_filename).name.split('.')[0]}", translator)
-    # lua_code = translator.translate(content)
-
-    # if not argv.only_lua_init and not argv.show_ast:
-    #     print(lua_code)
+    construct(input_filename, f"lua/{Path(input_filename).name.split('.')[0]}", translator, argv.minify_lua)
     return 0
 
 

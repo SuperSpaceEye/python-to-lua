@@ -13,9 +13,8 @@ from .nodevisitor import CNodeVisitor as ND
 
 class Translator:
     """Python to lua main class translator"""
-    def __init__(self, config=None, show_ast=False):
+    def __init__(self, config=None):
         self.config = config if config is not None else Config()
-        self.show_ast = show_ast
 
         self.output = []
 
@@ -28,9 +27,6 @@ class Translator:
         pycode = pycode.replace("\\n", "\\\\n")
 
         py_ast_tree = ast.parse(pycode)
-
-        if self.show_ast:
-            print(ast.dump(py_ast_tree))
 
         # precompiled_parts = []
         # continue_nodes = None

@@ -285,7 +285,7 @@ class CNodeVisitor(ast.NodeVisitor):
         self.emit("end")
 
     def analyse_for_header(self, node):
-        if node.iter.func.id == "range":
+        if hasattr(node.iter, "func") and node.iter.func.id == "range":
             line_right = "={start},{stop},{step} do"
 
             range_args = node.iter.args
@@ -306,7 +306,7 @@ class CNodeVisitor(ast.NodeVisitor):
 
             line_right = line_right.format(start=start, stop=stop, step=step)
         else:
-            line_right = "in op_in({iter}) do"
+            line_right = " in op_in({iter}) do"
 
             self.context.push(self.context.last())
             self.context.last()["structural_tuple"] = False
@@ -414,7 +414,7 @@ class CNodeVisitor(ast.NodeVisitor):
             if not name in PACKAGES.pyfiles.keys():
                 raise ImportError(f"Package {name} doesn't exist")
         try:
-            construct(PACKAGES.pyfiles[name], f"lua.{name}", Translator(self.config))
+            construct(PACKAGES.pyfiles[name], f"lua.{name}", Translator(self.config), self.config.minify_lua)
         except ImportError as err:
             raise ImportError(f"{err}\nIn package {name}")
 
@@ -485,7 +485,10 @@ class CNodeVisitor(ast.NodeVisitor):
         self.output.append(output)
     def visit_Pass(self, node: Pass) :pass
     def visit_Break(self, node: Break):
-        self.emit("break")
+        if self.config.break_in_do: line = "do break end"
+        else: line = "break"
+
+        self.emit(line)
     def visit_Continue(self, node: Continue):
         last_ctx = self.context.last()
 
@@ -593,7 +596,7 @@ class CNodeVisitor(ast.NodeVisitor):
         ends_count = 0
 
         for comp in node.generators:
-            line = "for {target} in {iterator} do"
+            line = "for {target} in op_in({iterator}) do"
             values = {
                 "target": self.visit_all(comp.target, inline=True),
                 "iterator": self.visit_all(comp.iter, inline=True),
@@ -626,7 +629,7 @@ class CNodeVisitor(ast.NodeVisitor):
         ends_count = 0
 
         for comp in node.generators:
-            line = "for {target} in {iterator} do"
+            line = "for {target} in op_in({iterator}) do"
             values = {
                 "target": self.visit_all(comp.target, inline=True),
                 "iterator": self.visit_all(comp.iter, inline=True),
