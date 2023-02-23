@@ -7,11 +7,12 @@ class Config:
     def __init__(self,
                  filename=None,
                  no_jumps=True,
-                 core_pathname="pythonlua.AbstractPyCC.CCT",
+                 core_pathname="AbstractPyCC.CCT",
                  core_prefix="cc",
                  break_in_do=True,
                  minify_lua=True,
-                 src_filename=""):
+                 src_filename="",
+                 as_package=True):
         self.data = {
             "class": {
                 "return_at_the_end": False,
@@ -23,6 +24,7 @@ class Config:
         self.break_in_do = break_in_do
         self.minify_lua = minify_lua
         self.src_filename = src_filename
+        self.as_package = as_package
 
         if filename is not None:
             self.load(filename)

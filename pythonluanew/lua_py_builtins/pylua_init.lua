@@ -49,5 +49,6 @@ help = help or require("help")
 hex = hex or require("hex")
 id = id or require("id")
 iterable_unpacker = iterable_unpacker or require("iterable_unpacker")
+rd = rd or require("rd")
 
 is_pyobj = is_pyobj or helper_functions.is_pyobj

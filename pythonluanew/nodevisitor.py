@@ -59,18 +59,22 @@ class CNodeVisitor(ast.NodeVisitor):
         raise RuntimeError(f"Unknown node: {node}")
 
     def visit_Module(self, node: Module):
-        self.context.last()["metaitem_name"] = self.config.src_filename+""
+        self.context.last()["metaitem_name"] = self.config.src_filename
 
         self.visit_all(node.body)
         self.output:list = self.output[0]
-        self.output.insert(0, "package.path = \"./pylua/?.lua;\"..package.path\nrequire(\"pylua_init\")\n")
+        self.output.insert(0,
+f"""package.path = \"./pylua/?.lua;\"..package.path
+require(\"pylua_init\")
+{"local PY_RETURN_DICT={}" if self.config.as_package else ""}
+local __name__ = "{self.config.src_filename if self.config.as_package else "__main__"}" """)
+
+        if self.config.as_package: self.output.append("return PY_RETURN_DICT")
     def visit_FunctionDef(self, node: FunctionDef):
         self.context.var_ctx.push()
 
         last_ctx = self.context.last()
-
         name = node.name
-        self.context.var_ctx.add(VarItem(name, "fn"))
 
         if last_ctx["class_name"]:
             name = ".".join([last_ctx["class_name"], name])
@@ -88,6 +92,8 @@ class CNodeVisitor(ast.NodeVisitor):
         if "." not in name and not self.context.var_ctx.exists(name):
             local_keyword = "local "
             self.context.var_ctx.add(VarItem(name, "var"))
+
+        self.context.var_ctx.add(VarItem(name, "fn"))
 
         function_def = f"{local_keyword}function {name}({', '.join(arguments)})"
 
@@ -125,9 +131,13 @@ class CNodeVisitor(ast.NodeVisitor):
 
         for decorator in reversed(node.decorator_list):
             decorator_name = self.visit_all(decorator, inline=True)
-            line = f"{name}_DECORATOR = {name}; " \
+            line = f"{local_keyword}{name}_DECORATOR = {name}; " \
                    f"{name} = function() return {decorator_name}({name}_DECORATOR) end"
             self.emit(line)
+
+        if not "." in name and self.config.as_package:
+            self.emit(f"PY_RETURN_DICT.{name}={name}")
+
     def visit_AsyncFunctionDef(self, node: AsyncFunctionDef):
         raise NotImplementedError("Async function def")
     def visit_ClassDef(self, node: ClassDef):
@@ -170,6 +180,8 @@ class CNodeVisitor(ast.NodeVisitor):
         # Not in the nested classes.
         if self.config["class"]["return_at_the_end"] and not last_ctx["class_name"]:
             self.emit("return {}".format(name))
+
+        if self.config.as_package: self.emit(f"PY_RETURN_DICT.{name}={name}")
     def visit_Return(self, node: Return):
         self.record_return_metadata(node)
 
@@ -237,6 +249,10 @@ class CNodeVisitor(ast.NodeVisitor):
                                                      value=value))
         if right_tuple and not left_tuple:
             self.context.pop()
+
+        # If global
+        if last_ctx["metaitem_name"] == self.config.src_filename:
+            self.emit(f"PY_RETURN_DICT.{target}={target}")
     def visit_AugAssign(self, node: AugAssign):
         operation = BinaryOperationDesc.OPERATION[node.op.__class__]
 
@@ -320,7 +336,9 @@ class CNodeVisitor(ast.NodeVisitor):
         self.emit("end")
 
     def analyse_FOR_use_python_iter(self, node):
-        if hasattr(node.iter, "func") and node.iter.func.id == "range":
+        # print(node.iter, node.iter)
+        # print(ast.dump(node, indent=4))
+        if hasattr(node.iter, "func") and hasattr(node.iter.func, "id") and node.iter.func.id == "range":
             return False
         return True
     def analyse_FOR_for_iterable_unpacking(self, node):
@@ -329,7 +347,7 @@ class CNodeVisitor(ast.NodeVisitor):
         # TODO custom functions
         if type(node.target) == ast.Tuple:
             # zip will return proper iterator
-            if hasattr(node.iter, "func") and node.iter.func.id in allowed_builtin:
+            if hasattr(node.iter, "func") and hasattr(node.iter.func, "id") and node.iter.func.id in allowed_builtin:
                 return False
             return True
         return False
@@ -452,7 +470,12 @@ class CNodeVisitor(ast.NodeVisitor):
         pass
         # raise NotImplementedError("try except")
     def visit_Assert(self, node: Assert):
-        raise NotImplementedError("assert")
+        line = f"assert({self.visit_all(node.test, True)}"
+        if node.msg != None:
+            line += f", \"{self.visit_all(node.msg, True)}\""
+        line += ")"
+
+        self.emit(line)
 
     def recursive_import_create(self, name):
         from .construct import construct
@@ -463,21 +486,24 @@ class CNodeVisitor(ast.NodeVisitor):
             if not name in PACKAGES.pyfiles.keys():
                 raise ImportError(f"Package {name} doesn't exist")
         try:
-            construct(PACKAGES.pyfiles[name], f"lua.{name}", Translator(self.config), self.config.minify_lua)
+            config = copy.deepcopy(self.config)
+            config.as_package = True
+            construct(PACKAGES.pyfiles[name], f"lua.{name}", Translator(config), self.config.minify_lua)
         except ImportError as err:
             raise ImportError(f"{err}\nIn package {name}")
 
     def visit_Import(self, node: Import):
         # print(node.names[0].name in PACKAGES.pyfiles.keys())
         name = node.names[0].name.rsplit(".", 1)[0]
+
+        if self.config.core_pathname in node.names[0].name:
+            return
+
         # print(name, node.names[0].name)
         self.recursive_import_create(name)
 
         line = 'local {asname} = require "{name}"'
         values = {"asname": "", "name": ""}
-
-        if node.names[0].name == self.config.core_pathname:
-            return
 
         if node.names[0].asname is None:
             values["name"] = node.names[0].name
@@ -493,28 +519,35 @@ class CNodeVisitor(ast.NodeVisitor):
         # print(node.names[0].name in PACKAGES.pyfiles.keys())
         module = node.module
 
+        if self.config.core_pathname in node.names[0].name:
+            return
+
         # print(name, node.names[0].name)
         self.recursive_import_create(module)
 
         names = []
         for name in node.names:
-            names.append(f"{module}.{name.name}")
+            asname = name.asname
+            name = name.name
 
-        line = 'local {asname} = require "{name}"'
-        values = {"asname": "", "name": ""}
+            if asname == None: asname = name
 
-        if node.names[0].name == self.config.core_pathname:
-            return
+            self.emit(f"local {asname} = (require(\"{module}\"))[\"{name}\"]")
 
-        if node.names[0].asname is None:
-            values["name"] = node.names[0].name
-            values["asname"] = values["name"]
-            values["asname"] = values["asname"].split(".")[-1]
-        else:
-            values["asname"] = node.names[0].asname
-            values["name"] = node.names[0].name
+            # names.append(f"{module}.{name.name}")
 
-        self.emit(line.format(**values))
+        # line = 'local {asname} = require "{name}"'
+        # values = {"asname": "", "name": ""}
+        #
+        # if node.names[0].asname is None:
+        #     values["name"] = node.names[0].name
+        #     values["asname"] = values["name"]
+        #     values["asname"] = values["asname"].split(".")[-1]
+        # else:
+        #     values["asname"] = node.names[0].asname
+        #     values["name"] = node.names[0].name
+        #
+        # self.emit(line.format(**values))
 
     def visit_Global(self, node: Global):
         raise NotImplementedError("global")

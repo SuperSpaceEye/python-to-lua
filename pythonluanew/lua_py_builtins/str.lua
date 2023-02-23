@@ -200,6 +200,8 @@ str = class(function(str)
     function str.casefold(self) return self.lower() end
     function str.center(self, num, char)
         local len = #self.___d
+        char = char or " "
+
         if num <= len then
             return self
         end
