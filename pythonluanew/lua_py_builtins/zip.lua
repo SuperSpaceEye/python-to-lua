@@ -17,6 +17,8 @@ function zip(iter1, iter2)
 
             return res1, res2
         end
+    else
+        error("Not pyobjects")
     end
 end
 

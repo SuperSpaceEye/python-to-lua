@@ -17,7 +17,7 @@ tuple = class(function(tuple)
             if obj.___name == "tuple" then self = obj
             else
                 local i
-                for i, item in enumerate(op_in(obj)) do
+                for i, item in op_in(enumerate(obj)) do
                     self.___d[i+1] = item
                 end
                 self.___size = i
@@ -41,10 +41,10 @@ tuple = class(function(tuple)
 
     function tuple.__add__(self, other)
         local copy = {}
-        for i, item in enumerate(op_in(self)) do
+        for i, item in op_in(enumerate(self)) do
             copy[i+1] = item
         end
-        for i, item in enumerate(op_in(other)) do
+        for i, item in op_in(enumerate(other)) do
             copy[i+1+self.__len__()] = item
         end
         return tuple(copy, true)

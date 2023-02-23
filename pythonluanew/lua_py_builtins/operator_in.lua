@@ -1,5 +1,5 @@
 local function range_in(iter)
-    local iter = iter.__iter__()
+    local iter = iter.__iter__(iter)
     return function()
         return iter.__next__(iter)
     end

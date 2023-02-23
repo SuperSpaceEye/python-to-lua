@@ -82,6 +82,7 @@ list = class(function(list)
         iter.i = 0
         iter.max_pos = self.__len__()
         iter.list = self
+        iter.___name = ("list_"..iter.___name)
         iter.__next__ = function(self)
             if self.i < self.max_pos then
                 self.i = self.i + 1
@@ -216,7 +217,7 @@ list = class(function(list)
     end
 
     function list.remove(self, x)
-        for i, item in enumerate(op_in(self)) do
+        for i, item in op_in(enumerate(self)) do
             if rawequal(item, x) then
                 for _i in op_in(range(self.__len__()-1, i, -1)) do
                     self[_i-1] = self[_i]
@@ -266,12 +267,12 @@ list = class(function(list)
         end
         if is_pyobj(x) then
             if x.__eq__ ~= nil then
-                for i, item in enumerate(op_in(slice)) do if x == item then return i end end
+                for i, item in op_in(enumerate(slice)) do if x == item then return i end end
             else
-                for i, item in enumerate(op_in(slice)) do if x.__repr__() == item then return i end end
+                for i, item in op_in(enumerate(slice)) do if x.__repr__() == item then return i end end
             end
         else
-            for i, item in enumerate(op_in(slice)) do if rawequal(x, item) then return i end end
+            for i, item in op_in(enumerate(slice)) do if rawequal(x, item) then return i end end
         end
 
         error("ValueError:")
