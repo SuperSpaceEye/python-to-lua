@@ -58,13 +58,13 @@ function enumerate(t, start)
     elseif is_pyobj(t) then
         local iter = iter_obj_creator()
         iter.t = t.__iter__()
-        iter.i = -1
+        iter.i = 0
         iter.start = start
         iter.__next__ = function(self)
             local val = self.t.__next__(self.t)
             self.i = self.i + 1
             if val ~= nil then
-                return self.i + self.start - 1, val
+                return self.i + self.start - 1, iterable_unpacker(val)
             else
                 return nil
             end
