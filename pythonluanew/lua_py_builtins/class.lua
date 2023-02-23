@@ -102,7 +102,7 @@ function class(class_init, inherited)
             __shl  = function(tbl, other) return tbl.__lshift(other) end,
             __shr  = function(tbl, other) return tbl.__rshift(other) end,
 
-            __eq = function(tbl, other) return tbl.__eq__(other) end,
+            __eq = function(tbl, other) print("here") return tbl.__eq__(other) end,
             __lt = function(tbl, other) return tbl.__lt__(other) end,
             __le = function(tbl, other) return tbl.__le__(other) end,
 

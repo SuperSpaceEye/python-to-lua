@@ -478,7 +478,7 @@ local __name__ = "{self.config.src_filename if self.config.as_package else "__ma
         self.emit(line)
 
     def recursive_import_create(self, name):
-        from .construct import construct
+        from .construct import construct, make_relative
         from .translator import Translator
 
         if not name in PACKAGES.pyfiles.keys():
@@ -488,7 +488,7 @@ local __name__ = "{self.config.src_filename if self.config.as_package else "__ma
         try:
             config = copy.deepcopy(self.config)
             config.as_package = True
-            construct(PACKAGES.pyfiles[name], f"lua.{name}", Translator(config), self.config.minify_lua)
+            construct(PACKAGES.pyfiles[name], f"{self.config.output_path}{make_relative(name)}", Translator(config), self.config.minify_lua)
         except ImportError as err:
             raise ImportError(f"{err}\nIn package {name}")
 

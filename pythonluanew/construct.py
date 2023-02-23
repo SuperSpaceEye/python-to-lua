@@ -3,8 +3,7 @@ from pathlib import Path
 
 def make_relative(dot_path:str):
     dot_path = ""+dot_path.replace(".", "/")
-    Path(dot_path).parent.mkdir(parents=True, exist_ok=True)
-    return dot_path+".lua"
+    return dot_path
 
 def construct(source_path, output_path, translator, minify=False):
     with open(source_path, mode="r") as file: py_code = file.read()
@@ -19,5 +18,5 @@ def construct(source_path, output_path, translator, minify=False):
 
         context.execute(jscript)
         lua_code = context.luamin.minify(lua_code)
-
-    with open(make_relative(output_path), mode="w") as file: file.write(lua_code)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path+".lua", mode="w") as file: file.write(lua_code)

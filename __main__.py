@@ -23,7 +23,8 @@ def create_arg_parser():
                         dest="no_jumps", action="store_true")
     parser.add_argument("--break-in-do", help="Compiler will wrap break statements in \"do end\"",
                         dest="break_in_do", action="store_true")
-
+    parser.add_argument("--output-path", help="Path where output will be. Should end with a /",
+                        dest="output_path", action="store", type=str, default="pylua/")
     return parser
 
 
@@ -41,9 +42,9 @@ def main():
                                    argv.no_jumps,
                                    break_in_do=argv.break_in_do,
                                    minify_lua=argv.minify_lua,
-                                   as_package=False))
-
-    construct(input_filename, f"lua/{Path(input_filename).name.split('.')[0]}", translator, argv.minify_lua)
+                                   as_package=False,
+                                   output_path=argv.output_path))
+    construct(input_filename, f"{argv.output_path}{Path(input_filename).name.split('.')[0]}", translator, argv.minify_lua)
     return 0
 
 

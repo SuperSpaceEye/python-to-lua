@@ -102,11 +102,15 @@ str = class(function(str)
             error("Incorrect var type")
         end
 
-        if v1 ~= nil and v2 ~= nil and v3 == nil or v3 == 1 then
+        if v1 ~= nil and v1 ~= None
+       and v2 ~= nil and v2 ~= None and
+           v3 == nil or v3 == 1 or v3 == None then
             return self.___two_index(v1, v2)
         end
 
-        if v1 ~= nil and v2 ~= nil and v3 ~= nil then
+        if v1 ~= nil and v1 ~= None
+       and v2 ~= nil and v2 ~= None
+       and v3 ~= nil and v3 ~= None then
             return self.___three_index(v1, v2, v3)
         end
     end

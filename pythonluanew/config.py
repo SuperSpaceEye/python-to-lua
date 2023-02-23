@@ -12,7 +12,8 @@ class Config:
                  break_in_do=True,
                  minify_lua=True,
                  src_filename="",
-                 as_package=True):
+                 as_package=True,
+                 output_path=""):
         self.data = {
             "class": {
                 "return_at_the_end": False,
@@ -25,6 +26,7 @@ class Config:
         self.minify_lua = minify_lua
         self.src_filename = src_filename
         self.as_package = as_package
+        self.output_path=output_path
 
         if filename is not None:
             self.load(filename)
