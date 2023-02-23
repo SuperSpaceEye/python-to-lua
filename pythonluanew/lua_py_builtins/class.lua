@@ -32,7 +32,6 @@ function class(class_init, inherited)
 
     local c = {}
     c.___is_pyobj = true
-    c.___is_none = false
 
     for i = #inherited, 1, -1 do
         for k, v in pairs(inherited[i]) do

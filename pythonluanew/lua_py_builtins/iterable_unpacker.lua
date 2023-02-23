@@ -13,19 +13,13 @@ local is_pyobj = helper_functions.is_pyobj
 --    return result
 --end
 
-function iterable_unpacker(item, num, result)
+function iterable_unpacker(item, result)
     result = result or {}
-    num = num or {999999999}
     if not is_pyobj(item) then
         result[#result+1]=item
-        num[1]=num[1]-1
     else
         for it in op_in(item) do
-            if num[1] > 0 then
-                iterable_unpacker(it, num, result)
-            else
-                result[#result+1]=item
-            end
+            iterable_unpacker(it, result)
         end
     end
     return table.unpack(result)

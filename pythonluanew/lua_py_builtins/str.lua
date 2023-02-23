@@ -57,8 +57,8 @@ str = class(function(str)
             error("TypeError: string indices must be integers")
         end
 
-        key = calc_key(self.__len__(), key)
-        if key > self.__len__() then
+        key = calc_key(#self.___d, key)
+        if key > #self.___d then
             error("IndexError: string index out of range")
         end
 
@@ -66,8 +66,8 @@ str = class(function(str)
     end
 
     function str.___two_index(self, start, stop)
-        start = calc_key(self.__len__(), start)
-        stop  = calc_key(self.__len__(), stop)
+        start = calc_key(#self.___d, start)
+        stop  = calc_key(#self.___d, stop)
         return str(string.sub(self.___d, start, stop-1))
     end
 
@@ -120,8 +120,8 @@ str = class(function(str)
         if o.__len__() == 0 then return false end
 
         local si = 0
-        for i in op_in(range(self.__len__())) do
-            --print(i, self.__len__(), si, o.__len__())
+        for i in op_in(range(#self.___d)) do
+            --print(i, #self.___d, si, o.__len__())
             if self[i].___d == o[si].___d then
                 si = si + 1
             end
@@ -161,7 +161,7 @@ str = class(function(str)
     function str.__iter__(self)
         local iter = iter_obj_creator()
         iter.i = 0
-        iter.max_pos = self.__len__()
+        iter.max_pos = #self.___d
         iter.str = self
         iter.__next__ = function(self)
             if self.i < self.max_pos then
@@ -176,7 +176,7 @@ str = class(function(str)
 
     function str.__reversed__(self)
         local iter = iter_obj_creator()
-        iter.i = self.__len__()-1
+        iter.i = #self.___d-1
         iter.min_pos = 0
         iter.str = self
         iter.__next__ = function(self)
@@ -199,7 +199,7 @@ str = class(function(str)
     end
     function str.casefold(self) return self.lower() end
     function str.center(self, num, char)
-        local len = self.__len__()
+        local len = #self.___d
         if num <= len then
             return self
         end
@@ -215,10 +215,10 @@ str = class(function(str)
         value = str(value)
 
         start = start or 0
-        stop = stop or self.__len__()
+        stop = stop or #self.___d
 
-        start = calc_key(self.__len__(), start)
-        stop  = calc_key(self.__len__(), stop)
+        start = calc_key(#self.___d, start)
+        stop  = calc_key(#self.___d, stop)
 
         local count = 0
         local val_i = 0
@@ -245,10 +245,10 @@ str = class(function(str)
         value = str(value)
 
         start = start or 0
-        stop = stop or self.__len__()
+        stop = stop or #self.___d
 
-        start = self.calc_key(self.__len__(), start)
-        stop  = self.calc_key(self.__len__(), stop)
+        start = self.calc_key(#self.___d, start)
+        stop  = self.calc_key(#self.___d, stop)
 
         -- if search boundary is less than value
         if stop - start < value.__len__() then return false end
@@ -265,7 +265,7 @@ str = class(function(str)
 
     function str.find(self, sub, start, stop)
         start = start or 0
-        stop = stop or self.__len__()
+        stop = stop or #self.___d
         sub = str(sub)
         self = self[{start, stop}]
         local res = string.find(self.___d, sub.___d)[1]
@@ -277,20 +277,20 @@ str = class(function(str)
 
     function str.index(self, sub, start, stop)
         start = start or 0
-        stop = stop or self.__len__()
+        stop = stop or #self.___d
         local res = self.find(sub, start, stop)
         if res == -1 then error("ValueError: No substring '".. str(sub).___d.."' in string '"..self.___d.."'")
         else return res end
     end
 
     function str.isalnum(self)
-        if self.__len__() == 0 then return false end
+        if #self.___d == 0 then return false end
         return self.isalpha() or self.isdecimal() or self.isdigit() or self.isnumeric()
     end
 
     function str.isalpha(self)
-        if self.__len__() == 0 then return false end
-        for i in op_in(range(self.__len__())) do
+        if #self.___d == 0 then return false end
+        for i in op_in(range(#self.___d)) do
             local char = self[i].___d
 
             if not ((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
@@ -303,8 +303,8 @@ str = class(function(str)
     function str.isascii(self) return true end
 
     function str.isdecimal(self)
-        if self.__len__() == 0 then return false end
-        for i in op_in(range(self.__len__())) do
+        if #self.___d == 0 then return false end
+        for i in op_in(range(#self.___d)) do
             local char = self[i].___d
 
             if not (char >= "0" and char <= "9") then
@@ -321,7 +321,7 @@ str = class(function(str)
     function str.islower(self)
         local has_cased = false
 
-        for i in op_in(range(self.__len__())) do
+        for i in op_in(range(#self.___d)) do
             local char = self[i].___d
             if ((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
                 has_cased = true
@@ -338,9 +338,9 @@ str = class(function(str)
     function str.isprintable(self) return true end
 
     function str.isspace(self)
-        if self.__len__() == 0 then return false end
+        if #self.___d == 0 then return false end
 
-        for i in op_in(range(self.__len__())) do
+        for i in op_in(range(#self.___d)) do
             local ch = self[i].___d
             if not (ch >= "\0" and ch <= " ") then
                 return false
@@ -355,7 +355,7 @@ str = class(function(str)
     function str.isupper(self)
         local has_cased = false
 
-        for i in op_in(range(self.__len__())) do
+        for i in op_in(range(#self.___d)) do
             local char = self[i].___d
             if ((char >= "a" and char <= "z") or (char >= "A" and char <= "Z")) then
                 has_cased = true
@@ -386,8 +386,8 @@ str = class(function(str)
         fillchar = fillchar or " "
         fillchar = str(fillchar)
 
-        if width <= self.__len__() then return self end
-        fillchar = fillchar * (width - self.__len__())
+        if width <= #self.___d then return self end
+        fillchar = fillchar * (width - #self.___d)
 
         return self + fillchar
     end
@@ -396,8 +396,8 @@ str = class(function(str)
         fillchar = fillchar or " "
         fillchar = str(fillchar)
 
-        if width <= self.__len__() then return self end
-        fillchar = fillchar * (width - self.__len__())
+        if width <= #self.___d then return self end
+        fillchar = fillchar * (width - #self.___d)
 
         return fillchar + self
     end
@@ -406,19 +406,19 @@ str = class(function(str)
         chars = chars or "  \n"
         chars = str(chars)
         local left = 0
-        for i in op_in(range(self.__len__())) do
+        for i in op_in(range(#self.___d)) do
             if op_in(self[i], chars) then
                 left = left + 1
             else break end
         end
-        return self[{left, self.__len__()}]
+        return self[{left, #self.___d}]
     end
 
     function str.rstrip(self, chars)
         chars = chars or "  \n"
         chars = str(chars)
         local left = -1
-        for i in op_in(range(self.__len__())) do
+        for i in op_in(range(#self.___d)) do
             if op_in(self[-(i+1)], chars) then
                 left = left - 1
             else break end
@@ -448,12 +448,12 @@ str = class(function(str)
 
     function str.removeprefix(self, prefix)
         prefix = str(prefix)
-        if self[{0, prefix.__len__()}] == prefix then return self[{prefix.__len__(), self.__len__()}] else return self end
+        if self[{0, prefix.__len__()}] == prefix then return self[{prefix.__len__(), #self.___d}] else return self end
     end
 
     function str.removesuffix(self, suffix)
         suffix = str(suffix)
-        if self[{-suffix.__len__(), self.__len__()}] == suffix then return self[{0, self.__len__()-suffix.__len__()}] else return self end
+        if self[{-suffix.__len__(), #self.___d}] == suffix then return self[{0, #self.___d-suffix.__len__()}] else return self end
     end
 
     function str.replace(self, old, new, count)
@@ -466,7 +466,7 @@ str = class(function(str)
 
     function str.rfind(self, sub, start, stop)
         start = start or 0
-        stop = stop or self.__len__()
+        stop = stop or #self.___d
         sub = str(sub)
         self = self[{start, stop}]
         local _, res = string.find(self.___d, "^.*("..sub.___d..")")
@@ -475,7 +475,7 @@ str = class(function(str)
 
     function str.rindex(self, sub, start, stop)
         start = start or 0
-        stop = stop or self.__len__()
+        stop = stop or #self.___d
         local res = self.rfind(sub, start, stop)
         if res == -1 then error("ValueError: No substring '".. str(sub).___d.."' in string '"..self.___d.."'")
         else return res end
@@ -486,13 +486,13 @@ str = class(function(str)
         sep = str(sep)
         local sep_len = sep.__len__()
 
-        maxsplit = maxsplit or self.__len__()
-        if maxsplit < 0 then maxsplit = self.__len__() end
+        maxsplit = maxsplit or #self.___d
+        if maxsplit < 0 then maxsplit = #self.___d end
         local chars = str()
         local splited = list()
 
         local pos = 0
-        local max_pos = self.__len__()
+        local max_pos = #self.___d
 
 
         while maxsplit > 0 and pos < max_pos do
@@ -520,13 +520,13 @@ str = class(function(str)
 
     --TODO refactor/rework
     local function split_whitespace(self, maxsplit, list)
-        maxsplit = maxsplit or self.__len__()
-        if maxsplit < 0 then maxsplit = self.__len__() end
+        maxsplit = maxsplit or #self.___d
+        if maxsplit < 0 then maxsplit = #self.___d end
         local chars = str()
         local splited = list()
 
         local pos = 0
-        local max_pos = self.__len__()
+        local max_pos = #self.___d
 
         while maxsplit > 0 and pos < max_pos do
             --local chr = self[pos]
@@ -568,7 +568,7 @@ str = class(function(str)
 
     function str.startswith(self, prefix, start, stop)
         start = start or 0
-        stop = stop or self.__len__()
+        stop = stop or #self.___d
     end
 
     function str.swapcase(self) end
@@ -582,14 +582,14 @@ str = class(function(str)
     end
 
     function str.zfill(self, width)
-        if width <= self.__len__() then return self end
+        if width <= #self.___d then return self end
         local has_leading = str()
-        local fill_num = width - self.__len__()
+        local fill_num = width - #self.___d
         local str
         if self[0].___d == "+" or self[0].___d == "-" then
             has_leading = self[0]
             fill_num = fill_num - 1
-            str = self[{1, self.__len__()}]
+            str = self[{1, #self.___d}]
         else
             str = self
         end

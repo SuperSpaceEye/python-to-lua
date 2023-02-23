@@ -366,7 +366,7 @@
 				formatExpression(expression.argument);
 
 		} else if (expressionType == 'IndexExpression') {
-
+			expression.base.inParens = true
 			result = formatBase(expression.base) + '[' +
 				formatExpression(expression.index) + ']';
 
@@ -378,7 +378,6 @@
 				});
 
 		} else if (expressionType == 'FunctionDeclaration') {
-			// TODO CHANGED HERE
 			result = '(function(';
 			if (expression.parameters.length) {
 				each(expression.parameters, function(parameter, needsComma) {
